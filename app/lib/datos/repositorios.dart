@@ -110,6 +110,70 @@ class Repositorio {
         if (responsable != null) 'responsable': responsable,
       });
 
+  // ── Autoevaluaciones ─────────────────────────────────────────────────────
+
+  /// Sube una o varias autoevaluaciones. El servidor procesa cada archivo por
+  /// separado, así que el que falle no tumba la carga de los demás: la
+  /// respuesta trae las que entraron y las que no, con su motivo.
+  Future<Map<String, dynamic>> cargarAuditorias(
+    List<({String ruta, String nombre})> archivos, {
+    int? sedeId,
+    String? periodo,
+  }) async {
+    final formulario = FormData();
+
+    for (final a in archivos) {
+      formulario.files.add(MapEntry(
+        'archivos[]',
+        await MultipartFile.fromFile(a.ruta, filename: a.nombre),
+      ));
+    }
+
+    if (sedeId != null) formulario.fields.add(MapEntry('sede_id', '$sedeId'));
+    if (periodo != null) formulario.fields.add(MapEntry('periodo', periodo));
+
+    try {
+      final r = await _api.dio.post<dynamic>('/auditorias/cargar', data: formulario);
+
+      return (r.data as Map).cast<String, dynamic>();
+    } on DioException catch (e) {
+      // Un 422 con archivos rechazados no es un fallo de red: trae el detalle
+      // de por qué cada archivo no se pudo leer, y la pantalla lo muestra.
+      final datos = e.response?.data;
+
+      if (e.response?.statusCode == 422 && datos is Map && datos['fallidas'] != null) {
+        return datos.cast<String, dynamic>();
+      }
+
+      throw e.error is ErrorApi ? e.error! as ErrorApi : ErrorApi('$e');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> auditorias({int? sedeId}) async {
+    final r = await _api.obtener('/auditorias', parametros: {
+      if (sedeId != null) 'sede_id': sedeId,
+    });
+
+    return ((r['datos'] as List?) ?? [])
+        .map((e) => (e as Map).cast<String, dynamic>())
+        .toList();
+  }
+
+  Future<Map<String, dynamic>> reconciliacionDeAuditoria(int auditoriaId) =>
+      _api.obtener('/auditorias/$auditoriaId/reconciliacion');
+
+  /// Publica la auditoría. Falla si queda alguna decisión sin tomar.
+  Future<Map<String, dynamic>> confirmarAuditoria(
+    int auditoriaId,
+    Map<int, Map<String, dynamic>> decisiones,
+  ) =>
+      _api.enviar('/auditorias/$auditoriaId/confirmar', cuerpo: {
+        'decisiones': decisiones.map((k, v) => MapEntry('$k', v)),
+      });
+
+  Future<void> eliminarAuditoria(int auditoriaId) =>
+      _api.dio.delete<dynamic>('/auditorias/$auditoriaId');
+
   // ── Cortes mensuales ─────────────────────────────────────────────────────
 
   Future<List<Corte>> cortes() async {
@@ -202,4 +266,9 @@ class Repositorio {
 
 final repositorioProvider = Provider<Repositorio>(
   (ref) => Repositorio(ref.watch(apiProvider)),
+);
+
+final auditoriasProvider =
+    FutureProvider.autoDispose<List<Map<String, dynamic>>>(
+  (ref) => ref.watch(repositorioProvider).auditorias(),
 );

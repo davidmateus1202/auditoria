@@ -5,6 +5,7 @@ import '../datos/repositorios.dart';
 import '../dominio/modelos.dart';
 import '../nucleo/tema.dart';
 import '../widgets/comunes.dart';
+import 'cargar_auditoria.dart';
 import 'hallazgos.dart';
 
 final consolidadoProvider =
@@ -32,6 +33,13 @@ class PantallaInicio extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Auditoría SUH'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.upload_file_outlined),
+            tooltip: 'Cargar auditoría',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const PantallaCargarAuditoria()),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Actualizar',
@@ -64,11 +72,18 @@ class _Contenido extends ConsumerWidget {
     final g = consolidado.generales;
 
     if (g.hallazgos == 0) {
-      return const SinContenido(
+      return SinContenido(
         icono: Icons.folder_off_outlined,
         titulo: 'Todavía no hay hallazgos',
-        detalle: 'Cargue la matriz de seguimiento para abrir el primer corte '
-            'y empezar a ver las cifras del municipio.',
+        detalle: 'Suba la autoevaluación de una sede para empezar a ver las '
+            'cifras del municipio.',
+        accion: FilledButton.icon(
+          icon: const Icon(Icons.upload_file_outlined, size: 18),
+          label: const Text('Cargar auditoría'),
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const PantallaCargarAuditoria()),
+          ),
+        ),
       );
     }
 

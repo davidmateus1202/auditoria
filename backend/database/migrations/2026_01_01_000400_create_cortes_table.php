@@ -66,6 +66,9 @@ return new class extends Migration
                 'persiste', 'nuevo', 'reincidencia', 'candidato_cierre',
                 'no_verificado', 'ausente_corte', 'revision', 'conflicto',
             ]);
+            // Un hallazgo nuevo aún no existe en la tabla de hallazgos, así
+            // que su estándar tiene que viajar en la propuesta.
+            $tabla->char('estandar_codigo', 2)->nullable();
             $tabla->text('texto_entrante')->nullable();
             $tabla->decimal('similitud', 4, 3)->nullable();
             $tabla->decimal('margen', 4, 3)->nullable();

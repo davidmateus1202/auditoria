@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'nucleo/tema.dart';
+import 'pantallas/cargar_auditoria.dart';
 import 'pantallas/consolidado.dart';
 import 'pantallas/corte.dart';
 import 'pantallas/hallazgos.dart';
@@ -139,6 +140,22 @@ class _Menu extends ConsumerWidget {
                   ),
                 ],
               ),
+            ),
+            const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.upload_file_outlined, size: 20),
+              title: const Text('Cargar auditoría'),
+              subtitle: const Text(
+                'Autoevaluaciones SUH de las sedes',
+                style: TextStyle(fontSize: 11.5),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                      builder: (_) => const PantallaCargarAuditoria()),
+                );
+              },
             ),
             const Divider(height: 1),
             const Spacer(),

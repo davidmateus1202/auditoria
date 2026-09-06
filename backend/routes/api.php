@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\AuditoriaController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CatalogoController;
 use App\Http\Controllers\Api\ConsolidadoController;
@@ -20,6 +21,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('catalogos/servicios', [CatalogoController::class, 'servicios']);
 
     Route::apiResource('sedes', SedeController::class);
+
+    // Autoevaluaciones: la entrada principal del sistema.
+    Route::get('auditorias', [AuditoriaController::class, 'index']);
+    Route::post('auditorias/cargar', [AuditoriaController::class, 'cargar']);
+    Route::get('auditorias/{auditoria}/reconciliacion', [AuditoriaController::class, 'reconciliacion']);
+    Route::post('auditorias/{auditoria}/confirmar', [AuditoriaController::class, 'confirmar']);
+    Route::delete('auditorias/{auditoria}', [AuditoriaController::class, 'destroy']);
 
     // Hallazgos: los filtros de la pantalla de listado.
     Route::get('hallazgos', [HallazgoController::class, 'index']);

@@ -14,7 +14,7 @@ class Reconciliacion extends Model
     protected $table = 'reconciliaciones';
 
     protected $fillable = [
-        'flujo', 'auditoria_id', 'corte_id', 'hallazgo_id', 'destino',
+        'flujo', 'auditoria_id', 'corte_id', 'hallazgo_id', 'destino', 'estandar_codigo',
         'texto_entrante', 'similitud', 'margen', 'resuelto', 'resuelto_por', 'resuelto_en',
     ];
 

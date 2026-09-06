@@ -107,6 +107,7 @@ final class ServicioReconciliacion
                 'auditoria_id' => $auditoria->id,
                 'hallazgo_id' => $movimiento->hallazgoId,
                 'destino' => $movimiento->destino,
+                'estandar_codigo' => $movimiento->codigoEstandar(),
                 'texto_entrante' => $movimiento->entrante?->descripcion,
                 'similitud' => $movimiento->similitud > 0 ? round($movimiento->similitud, 3) : null,
                 'margen' => $movimiento->margen > 0 ? round($movimiento->margen, 3) : null,
