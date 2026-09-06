@@ -42,6 +42,9 @@ final class LectorSeguimiento
         'LISTA EQUIPOS',
         'SEGUIMIENTO 31 MAYO 2022',
         'HOJA1',
+        // Hoja oculta que agrega la exportación con el corte y las huellas de
+        // cada fila. Vuelve en el archivo y no es una sede.
+        'CONTROL',
     ];
 
     private const TITULOS_ESPERADOS = [
