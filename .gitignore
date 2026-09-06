@@ -1,0 +1,19 @@
+# Archivos de auditoría reales de la E.S.E.
+#
+# Traen datos de las sedes y de los auditores, y pesan 9 MB casi todo en
+# imágenes. Se quedan en la carpeta de trabajo, no en el repositorio: las
+# pruebas los leen desde aquí y se omiten solas si no están (ver
+# tests/UsaArchivosReales.php).
+*.xlsx
+*.xls
+*.xlsm
+
+# Temporales de Excel
+~$*
+
+# Salidas generadas
+/exportaciones/
+/almacenamiento/
+
+.DS_Store
+Thumbs.db
