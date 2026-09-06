@@ -7,7 +7,9 @@ plugins {
 
 android {
     namespace = "co.gov.villavicencio.ese.auditoria_suh"
-    compileSdk = flutter.compileSdkVersion
+    // flutter_secure_storage se compila contra el SDK 36, y compilar contra
+    // el más alto es compatible hacia atrás.
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -24,7 +26,10 @@ android {
         applicationId = "co.gov.villavicencio.ese.auditoria_suh"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        // flutter_secure_storage guarda el token en el almacén cifrado del
+        // sistema y eso exige Android 6. Cubre prácticamente todo el parque
+        // de dispositivos en uso.
+        minSdk = 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
