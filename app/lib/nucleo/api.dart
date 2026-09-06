@@ -27,18 +27,56 @@ class ErrorApi implements Exception {
   String toString() => mensaje;
 }
 
+/// Guarda el token en el almacén cifrado del sistema.
+///
+/// En algunos dispositivos Android ese almacén falla —el llavero se corrompe,
+/// o el fabricante lo implementa a medias— y la escritura lanza. Eso no puede
+/// impedir el ingreso: el servidor ya emitió el token y la persona ya se
+/// autenticó. Se conserva en memoria y se sigue; lo único que se pierde es que
+/// la sesión sobreviva a cerrar la aplicación, que es mucho menos malo que no
+/// poder entrar.
 class Sesion {
-  const Sesion(this._almacen);
+  Sesion(this._almacen);
 
   final FlutterSecureStorage _almacen;
   static const _clave = 'token_acceso';
 
-  Future<String?> token() => _almacen.read(key: _clave);
+  String? _enMemoria;
 
-  Future<void> guardar(String token) =>
-      _almacen.write(key: _clave, value: token);
+  /// Se supo que el almacén no es de fiar en este dispositivo.
+  bool almacenDegradado = false;
 
-  Future<void> borrar() => _almacen.delete(key: _clave);
+  Future<String?> token() async {
+    if (_enMemoria != null) return _enMemoria;
+
+    try {
+      return _enMemoria = await _almacen.read(key: _clave);
+    } catch (_) {
+      almacenDegradado = true;
+
+      return null;
+    }
+  }
+
+  Future<void> guardar(String token) async {
+    _enMemoria = token;
+
+    try {
+      await _almacen.write(key: _clave, value: token);
+    } catch (_) {
+      almacenDegradado = true;
+    }
+  }
+
+  Future<void> borrar() async {
+    _enMemoria = null;
+
+    try {
+      await _almacen.delete(key: _clave);
+    } catch (_) {
+      almacenDegradado = true;
+    }
+  }
 }
 
 class ClienteApi {
@@ -172,7 +210,7 @@ class ClienteApi {
 }
 
 final sesionProvider = Provider<Sesion>(
-  (ref) => const Sesion(FlutterSecureStorage()),
+  (ref) => Sesion(const FlutterSecureStorage()),
 );
 
 final apiProvider = Provider<ClienteApi>(

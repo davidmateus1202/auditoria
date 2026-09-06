@@ -76,7 +76,9 @@ class _PantallaIngresoEstado extends ConsumerState<PantallaIngreso> {
     } on ErrorApi catch (e) {
       if (mounted) setState(() => _error = e.mensaje);
     } catch (e) {
-      if (mounted) setState(() => _error = '$e');
+      // Cualquier otro fallo se muestra tal cual: es más útil un mensaje
+      // técnico que un «algo salió mal» que no deja avanzar a nadie.
+      if (mounted) setState(() => _error = 'Fallo inesperado: $e');
     } finally {
       if (mounted) setState(() => _enviando = false);
     }
