@@ -142,6 +142,33 @@ final class ResultadoExtraccion
         return $resumenes;
     }
 
+    /**
+     * Estándares que esta auditoría sí revisó.
+     *
+     * Es la pieza que sostiene la regla de seguridad del cierre: un hallazgo
+     * solo se propone para cerrar si su estándar aparece aquí. Un estándar que
+     * volvió como «No verificado» no cuenta — eso es una alerta de cobertura,
+     * no la prueba de que el problema se resolvió. Y un estándar que no aparece
+     * en el informe tampoco: en este formato cada estándar lleva su fila, con
+     * «Cumple» cuando salió limpio, así que la ausencia significa que nadie lo
+     * miró.
+     *
+     * @return list<string>
+     */
+    public function estandaresEvaluados(): array
+    {
+        $evaluados = [];
+
+        foreach ($this->hallazgos as $hallazgo) {
+            if ($hallazgo->clasificacion === ClasificacionHallazgo::Hallazgo
+                || $hallazgo->clasificacion === ClasificacionHallazgo::Cumple) {
+                $evaluados[$hallazgo->codigoEstandar] = true;
+            }
+        }
+
+        return array_keys($evaluados);
+    }
+
     /** @return array<string, ResumenServicio> nombre del servicio => resumen */
     public function porServicio(): array
     {

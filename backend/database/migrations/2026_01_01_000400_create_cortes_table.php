@@ -63,7 +63,7 @@ return new class extends Migration
             $tabla->foreignId('hallazgo_id')->nullable()->constrained('hallazgos')->nullOnDelete();
 
             $tabla->enum('destino', [
-                'persiste', 'nuevo', 'candidato_cierre',
+                'persiste', 'nuevo', 'reincidencia', 'candidato_cierre',
                 'no_verificado', 'ausente_corte', 'revision', 'conflicto',
             ]);
             $tabla->text('texto_entrante')->nullable();
