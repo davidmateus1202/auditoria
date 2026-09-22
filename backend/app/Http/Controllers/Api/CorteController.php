@@ -14,6 +14,7 @@ use App\Services\Cortes\ImportadorMatriz;
 use App\Services\Cortes\ServicioCorte;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class CorteController extends Controller
@@ -66,7 +67,10 @@ class CorteController extends Controller
 
         $ruta = $peticion->file('archivo')->store('cargas');
 
-        return response()->json($this->importador->importar(storage_path('app/'.$ruta), $periodo));
+        // storage_path('app/'.$ruta) asumía la raíz vieja del disco «local»;
+        // desde que el root es storage/app/private, hay que resolver la ruta
+        // a través del disco en vez de reconstruirla a mano.
+        return response()->json($this->importador->importar(Storage::path($ruta), $periodo));
     }
 
     /** Lo que quedó pendiente de decidir en el mes. */

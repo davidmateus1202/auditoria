@@ -10,6 +10,7 @@ use App\Models\Auditoria;
 use App\Models\Reconciliacion;
 use App\Services\Auditorias\AplicadorReconciliacion;
 use App\Services\Auditorias\CargadorAuditoria;
+use App\Services\Auditorias\Excepciones\SedeNoIdentificada;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use RuntimeException;
@@ -81,6 +82,14 @@ class AuditoriaController extends Controller
             } catch (EstructuraInvalida $e) {
                 // El extractor rechaza en vez de adivinar, y dice hoja y fila:
                 // esa precisión tiene que llegar a la pantalla.
+                $fallidas[] = [
+                    'archivo' => $archivo->getClientOriginalName(),
+                    ...$e->contexto(),
+                ];
+            } catch (SedeNoIdentificada $e) {
+                // A diferencia de EstructuraInvalida, esto sí lo puede resolver
+                // quien sube el archivo: eligiendo o creando la sede desde la
+                // pantalla, sin tocar el Excel.
                 $fallidas[] = [
                     'archivo' => $archivo->getClientOriginalName(),
                     ...$e->contexto(),

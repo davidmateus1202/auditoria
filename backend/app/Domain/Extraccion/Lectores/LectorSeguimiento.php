@@ -45,6 +45,10 @@ final class LectorSeguimiento
         // Hoja oculta que agrega la exportación con el corte y las huellas de
         // cada fila. Vuelve en el archivo y no es una sede.
         'CONTROL',
+        // Vistas agregadas del consolidado histórico: no son una sede, son un
+        // resumen de todas.
+        'AMBULANCIAS',
+        'ESE GENERAL',
     ];
 
     private const TITULOS_ESPERADOS = [
@@ -232,7 +236,11 @@ final class LectorSeguimiento
 
     private function celda(Worksheet $hoja, string $columna, int $fila): string
     {
-        $valor = $hoja->getCell($columna.$fila)->getValue();
+        $celda = $hoja->getCell($columna.$fila);
+        // Ver LectorAutoevaluacion::celda(): algunas plantillas traen texto
+        // como fórmula hacia una hoja oculta; se lee el valor que Excel ya
+        // calculó y cacheó, no la fórmula cruda.
+        $valor = $celda->isFormula() ? $celda->getOldCalculatedValue() : $celda->getValue();
 
         return is_scalar($valor) ? (string) $valor : '';
     }

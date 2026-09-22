@@ -392,7 +392,13 @@ final class LectorAutoevaluacion
 
     private function celda(Worksheet $hoja, string $columna, int $fila): string
     {
-        $valor = $hoja->getCell($columna.$fila)->getValue();
+        $celda = $hoja->getCell($columna.$fila);
+        // Algunas plantillas traen el nombre de la sede como fórmula que
+        // referencia una hoja oculta (p. ej. ='Todos '!B4:F4); getValue()
+        // devolvería la fórmula cruda, no el texto. Excel ya calculó y guardó
+        // el resultado, así que se lee ese valor cacheado en vez de
+        // reevaluar la fórmula.
+        $valor = $celda->isFormula() ? $celda->getOldCalculatedValue() : $celda->getValue();
 
         return is_scalar($valor) ? (string) $valor : '';
     }

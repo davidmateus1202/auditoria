@@ -131,16 +131,45 @@ final class ServicioCorte
     }
 
     /**
+     * Suma al corte abierto los hallazgos vigentes de una sede que todavía no
+     * tenían seguimiento ahí.
+     *
+     * Abrir un corte es una foto de un momento; una autoevaluación que se
+     * confirma después no debería quedar invisible en el consolidado del mes
+     * solo por haber llegado tarde. Sin esto, cada sede que se sube después
+     * de abrir el mes desaparece del consolidado aunque esté publicada.
+     */
+    public function alcanzarSede(int $sedeId): void
+    {
+        $corte = Corte::abierto();
+
+        if ($corte === null) {
+            return;
+        }
+
+        $this->arrastrarVigentes($corte, Corte::ultimoCerrado(), soloSedeId: $sedeId);
+    }
+
+    /**
      * Trae al mes nuevo todos los hallazgos que siguen exigiendo gestión, con
      * el estado que traían y sin marcar: nadie ha reportado nada todavía.
+     *
+     * Excluye lo que el corte ya tenía trackeado: al abrir un mes eso siempre
+     * está vacío, pero cuando una sede se suma tarde (alcanzarSede) puede que
+     * parte de sus hallazgos ya estuvieran, de una carga anterior.
      */
-    private function arrastrarVigentes(Corte $corte, ?Corte $anterior): void
+    private function arrastrarVigentes(Corte $corte, ?Corte $anterior, ?int $soloSedeId = null): void
     {
         $previos = $anterior === null
             ? collect()
             : $anterior->estados()->get()->keyBy('hallazgo_id');
 
-        Hallazgo::query()->vigentes()->chunkById(200, function ($hallazgos) use ($corte, $previos): void {
+        $yaTrackeados = $corte->estados()->pluck('hallazgo_id');
+
+        Hallazgo::query()->vigentes()
+            ->when($soloSedeId !== null, fn ($q) => $q->where('sede_id', $soloSedeId))
+            ->whereNotIn('id', $yaTrackeados)
+            ->chunkById(200, function ($hallazgos) use ($corte, $previos): void {
             $filas = [];
 
             foreach ($hallazgos as $hallazgo) {

@@ -140,22 +140,28 @@ final class ImportadorLineaBase
     {
         $estado = $extraido->estado ?? EstadoHallazgo::SinDato;
 
-        HallazgoEstadoCorte::create([
-            'hallazgo_id' => $hallazgo->id,
-            'corte_id' => $corte->id,
-            'estado' => $estado,
-            'presente_en_corte' => true,
-            'meses_abierto' => $estado->esVigente() ? 1 : 0,
-            'accion_propuesta' => $extraido->accionPropuesta,
-            'responsable' => $extraido->responsable,
-            'evidencia' => $extraido->evidencia,
-            'huella_exportada' => HallazgoEstadoCorte::calcularHuella(
-                $estado,
-                $extraido->accionPropuesta,
-                $extraido->responsable,
-                $extraido->evidencia,
-            ),
-        ]);
+        // Dos filas de la misma hoja pueden producir la misma huella (el
+        // mismo hallazgo real, descrito dos veces): registrar() ya las
+        // colapsa en un solo Hallazgo, así que aquí también hay que
+        // sobrescribir en vez de insertar de nuevo, o la segunda choca contra
+        // el único (hallazgo_id, corte_id) que ya dejó la primera.
+        HallazgoEstadoCorte::updateOrCreate(
+            ['hallazgo_id' => $hallazgo->id, 'corte_id' => $corte->id],
+            [
+                'estado' => $estado,
+                'presente_en_corte' => true,
+                'meses_abierto' => $estado->esVigente() ? 1 : 0,
+                'accion_propuesta' => $extraido->accionPropuesta,
+                'responsable' => $extraido->responsable,
+                'evidencia' => $extraido->evidencia,
+                'huella_exportada' => HallazgoEstadoCorte::calcularHuella(
+                    $estado,
+                    $extraido->accionPropuesta,
+                    $extraido->responsable,
+                    $extraido->evidencia,
+                ),
+            ],
+        );
     }
 
     /**

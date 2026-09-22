@@ -13,6 +13,7 @@ use App\Models\Auditoria;
 use App\Models\EvaluacionCriterio;
 use App\Models\Sede;
 use App\Models\Servicio;
+use App\Services\Auditorias\Excepciones\SedeNoIdentificada;
 use App\Services\Extraccion\ExtractorExcel;
 use App\Services\Reconciliacion\ServicioReconciliacion;
 use Illuminate\Http\UploadedFile;
@@ -103,10 +104,13 @@ final class CargadorAuditoria
         $sede = Sede::resolverPorTexto($resultado->sede);
 
         if ($sede === null) {
-            throw new RuntimeException(sprintf(
-                'No se pudo identificar la sede a partir del archivo%s. Elíjala en la lista y vuelva a subirlo.',
-                $resultado->sede !== null ? " (dice «{$resultado->sede}»)" : '',
-            ));
+            throw new SedeNoIdentificada(
+                sprintf(
+                    'No se pudo identificar la sede a partir del archivo%s. Elíjala en la lista y vuelva a subirlo.',
+                    $resultado->sede !== null ? " (dice «{$resultado->sede}»)" : '',
+                ),
+                textoEncontrado: $resultado->sede,
+            );
         }
 
         return $sede;

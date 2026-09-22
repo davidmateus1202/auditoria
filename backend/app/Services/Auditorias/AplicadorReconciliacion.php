@@ -14,6 +14,7 @@ use App\Models\HallazgoAparicion;
 use App\Models\Reconciliacion;
 use App\Models\Seguimiento;
 use App\Models\User;
+use App\Services\Cortes\ServicioCorte;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
@@ -27,6 +28,8 @@ use RuntimeException;
  */
 final class AplicadorReconciliacion
 {
+    public function __construct(private readonly ServicioCorte $cortes = new ServicioCorte()) {}
+
     /** Acción por destino que exige confirmación. */
     private const ACCIONES = [
         'candidato_cierre' => ['cerrar', 'mantener'],
@@ -73,6 +76,11 @@ final class AplicadorReconciliacion
             }
 
             $auditoria->update(['estado' => 'publicada']);
+
+            // El mes puede llevar días abierto cuando esta sede se confirma:
+            // sin esto, sus hallazgos quedarían fuera del corte y por lo tanto
+            // invisibles en el consolidado, aunque la auditoría ya esté publicada.
+            $this->cortes->alcanzarSede($auditoria->sede_id);
 
             return $conteo;
         });
