@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../datos/repositorios.dart';
+import '../dominio/modelos.dart';
 import '../nucleo/api.dart';
 import '../nucleo/tema.dart';
 import '../widgets/comunes.dart';
+import 'auditorias.dart';
 import 'confirmar_cruce.dart';
 import 'inicio.dart' show consolidadoProvider;
 
@@ -34,13 +36,13 @@ class _PantallaCargarAuditoriaEstado
       type: FileType.custom,
       allowedExtensions: const ['xlsx', 'xls'],
       allowMultiple: true,
-      withData: false,
+      withData: true,
     );
 
     if (seleccion == null) return;
 
     setState(() {
-      _elegidos = seleccion.files.where((f) => f.path != null).toList();
+      _elegidos = seleccion.files.where((f) => f.bytes != null).toList();
       _resultado = null;
       _error = null;
     });
@@ -57,7 +59,7 @@ class _PantallaCargarAuditoriaEstado
 
     try {
       final respuesta = await ref.read(repositorioProvider).cargarAuditorias(
-            _elegidos.map((f) => (ruta: f.path!, nombre: f.name)).toList(),
+            _elegidos.map((f) => (bytes: f.bytes!, nombre: f.name)).toList(),
           );
 
       if (!mounted) return;
@@ -65,9 +67,16 @@ class _PantallaCargarAuditoriaEstado
       ref.invalidate(consolidadoProvider);
       ref.invalidate(auditoriasProvider);
 
+      // Los que fallaron quedan seleccionados: así «Elegir sede» puede
+      // reintentar ese archivo puntual sin pedir que se vuelva a adjuntar.
+      final nombresCargados = ((respuesta['cargadas'] as List?) ?? const [])
+          .cast<Map<String, dynamic>>()
+          .map((c) => c['archivo'])
+          .toSet();
+
       setState(() {
         _resultado = respuesta;
-        _elegidos = [];
+        _elegidos = _elegidos.where((f) => !nombresCargados.contains(f.name)).toList();
       });
     } on ErrorApi catch (e) {
       if (mounted) setState(() => _error = e.mensaje);
@@ -78,9 +87,79 @@ class _PantallaCargarAuditoriaEstado
     }
   }
 
+  /// Reintenta un solo archivo con la sede ya decidida (elegida de la lista o
+  /// recién creada). No toca los demás archivos del resultado: cada uno se
+  /// resuelve por su cuenta, igual que en la carga original.
+  Future<void> _reintentarConSede(String nombreArchivo, int sedeId) async {
+    final archivo = _elegidos.where((f) => f.name == nombreArchivo).firstOrNull;
+    if (archivo?.bytes == null) return;
+
+    setState(() => _subiendo = true);
+
+    try {
+      final respuesta = await ref.read(repositorioProvider).cargarAuditorias(
+        [(bytes: archivo!.bytes!, nombre: archivo.name)],
+        sedeId: sedeId,
+      );
+
+      if (!mounted) return;
+
+      ref.invalidate(consolidadoProvider);
+      ref.invalidate(auditoriasProvider);
+
+      final nuevasCargadas =
+          ((respuesta['cargadas'] as List?) ?? const []).cast<Map<String, dynamic>>();
+      final nuevasFallidas =
+          ((respuesta['fallidas'] as List?) ?? const []).cast<Map<String, dynamic>>();
+
+      setState(() {
+        final previas = _resultado ?? const {'cargadas': [], 'fallidas': []};
+        final cargadasPrevias =
+            ((previas['cargadas'] as List?) ?? const []).cast<Map<String, dynamic>>();
+        final fallidasPrevias = ((previas['fallidas'] as List?) ?? const [])
+            .cast<Map<String, dynamic>>()
+            .where((f) => f['archivo'] != nombreArchivo)
+            .toList();
+
+        _resultado = {
+          'cargadas': [...cargadasPrevias, ...nuevasCargadas],
+          'fallidas': [...fallidasPrevias, ...nuevasFallidas],
+        };
+
+        if (nuevasCargadas.isNotEmpty) {
+          _elegidos = _elegidos.where((f) => f.name != nombreArchivo).toList();
+        }
+      });
+    } on ErrorApi catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.mensaje), backgroundColor: Paleta.critico),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _subiendo = false);
+    }
+  }
+
+  Future<void> _resolverSede(String nombreArchivo, String? textoEncontrado) async {
+    final sedeId = await _abrirSelectorDeSede(context, ref, textoEncontrado);
+    if (sedeId != null) await _reintentarConSede(nombreArchivo, sedeId);
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Cargar auditoría')),
+        appBar: AppBar(
+          title: const Text('Cargar auditoría'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.folder_outlined),
+              tooltip: 'Archivos cargados',
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const PantallaAuditorias()),
+              ),
+            ),
+          ],
+        ),
         body: ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
           children: [
@@ -170,17 +249,206 @@ class _PantallaCargarAuditoriaEstado
             ],
             if (_resultado != null) ...[
               const SizedBox(height: 24),
-              _Resultado(datos: _resultado!),
+              _Resultado(datos: _resultado!, onElegirSede: _resolverSede),
             ],
           ],
         ),
       );
 }
 
+/// Trae las sedes existentes y deja elegir una, o registrar la que falte, sin
+/// salir de la pantalla de carga. Devuelve el id elegido, o nulo si la
+/// persona canceló.
+Future<int?> _abrirSelectorDeSede(
+  BuildContext context,
+  WidgetRef ref,
+  String? textoEncontrado,
+) async {
+  List<Sede> sedes;
+
+  try {
+    sedes = await ref.read(repositorioProvider).sedes();
+  } on ErrorApi catch (e) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.mensaje), backgroundColor: Paleta.critico),
+      );
+    }
+    return null;
+  }
+
+  if (!context.mounted) return null;
+
+  return showDialog<int>(
+    context: context,
+    builder: (_) => _DialogoElegirSede(sedes: sedes, textoEncontrado: textoEncontrado),
+  );
+}
+
+class _DialogoElegirSede extends ConsumerStatefulWidget {
+  const _DialogoElegirSede({required this.sedes, this.textoEncontrado});
+
+  final List<Sede> sedes;
+  final String? textoEncontrado;
+
+  @override
+  ConsumerState<_DialogoElegirSede> createState() => _DialogoElegirSedeEstado();
+}
+
+class _DialogoElegirSedeEstado extends ConsumerState<_DialogoElegirSede> {
+  bool _creandoNueva = false;
+  bool _creando = false;
+  String? _errorCreacion;
+  final _codigo = TextEditingController();
+  final _nombre = TextEditingController();
+
+  @override
+  void dispose() {
+    _codigo.dispose();
+    _nombre.dispose();
+    super.dispose();
+  }
+
+  Future<void> _crearYUsar() async {
+    final codigo = _codigo.text.trim();
+    final nombre = _nombre.text.trim();
+
+    if (codigo.isEmpty || nombre.isEmpty) {
+      setState(() => _errorCreacion = 'Complete el código y el nombre.');
+      return;
+    }
+
+    setState(() {
+      _creando = true;
+      _errorCreacion = null;
+    });
+
+    try {
+      final sede = await ref
+          .read(repositorioProvider)
+          .crearSede(codigo: codigo, nombre: nombre);
+
+      if (mounted) Navigator.of(context).pop(sede.id);
+    } on ErrorApi catch (e) {
+      if (mounted) setState(() => _errorCreacion = e.mensaje);
+    } finally {
+      if (mounted) setState(() => _creando = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+        title: const Text('Elegir sede'),
+        content: SizedBox(
+          width: 360,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (widget.textoEncontrado != null) ...[
+                  Text(
+                    'El archivo dice: «${widget.textoEncontrado}»',
+                    style: const TextStyle(fontSize: 12.5, color: Paleta.apagado, height: 1.4),
+                  ),
+                  const SizedBox(height: 14),
+                ],
+                if (!_creandoNueva) ...[
+                  if (widget.sedes.isEmpty)
+                    const Text(
+                      'Todavía no hay sedes registradas.',
+                      style: TextStyle(fontSize: 13, color: Paleta.apagado),
+                    )
+                  else
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 280),
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        itemCount: widget.sedes.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemBuilder: (_, i) {
+                          final sede = widget.sedes[i];
+                          return ListTile(
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(sede.nombre, style: const TextStyle(fontSize: 13.5)),
+                            subtitle: Text(sede.codigo, style: const TextStyle(fontSize: 11.5)),
+                            onTap: () => Navigator.of(context).pop(sede.id),
+                          );
+                        },
+                      ),
+                    ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: () => setState(() => _creandoNueva = true),
+                    icon: const Icon(Icons.add, size: 17),
+                    label: const Text('Registrar una sede nueva'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Paleta.sello,
+                      side: const BorderSide(color: Paleta.regla),
+                      minimumSize: const Size.fromHeight(0),
+                    ),
+                  ),
+                ] else ...[
+                  TextField(
+                    controller: _codigo,
+                    textCapitalization: TextCapitalization.characters,
+                    decoration: const InputDecoration(
+                      labelText: 'Código',
+                      hintText: 'COMUNEROS',
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: _nombre,
+                    decoration: const InputDecoration(
+                      labelText: 'Nombre',
+                      hintText: 'Centro de Salud Comuneros',
+                    ),
+                  ),
+                  if (_errorCreacion != null) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      _errorCreacion!,
+                      style: const TextStyle(fontSize: 12.5, color: Paleta.critico),
+                    ),
+                  ],
+                  const SizedBox(height: 4),
+                  TextButton.icon(
+                    onPressed: _creando ? null : () => setState(() => _creandoNueva = false),
+                    icon: const Icon(Icons.arrow_back, size: 16),
+                    label: const Text('Elegir de la lista en vez de crear'),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancelar'),
+          ),
+          if (_creandoNueva)
+            FilledButton(
+              onPressed: _creando ? null : _crearYUsar,
+              child: _creando
+                  ? const SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Crear y usar'),
+            ),
+        ],
+      );
+}
+
 class _Resultado extends ConsumerWidget {
-  const _Resultado({required this.datos});
+  const _Resultado({required this.datos, required this.onElegirSede});
 
   final Map<String, dynamic> datos;
+  final Future<void> Function(String nombreArchivo, String? textoEncontrado) onElegirSede;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -201,7 +469,15 @@ class _Resultado extends ConsumerWidget {
           const SizedBox(height: 8),
           const RotuloSeccion('No se pudieron leer'),
           for (final f in fallidas.cast<Map<String, dynamic>>()) ...[
-            _TarjetaFallida(fallo: f),
+            _TarjetaFallida(
+              fallo: f,
+              onElegirSede: f['tipo'] == 'sede_no_identificada'
+                  ? () => onElegirSede(
+                        f['archivo'] as String,
+                        f['texto_encontrado'] as String?,
+                      )
+                  : null,
+            ),
             const SizedBox(height: 10),
           ],
         ],
@@ -299,9 +575,15 @@ class _TarjetaCargada extends StatelessWidget {
 /// Esa precisión es la diferencia entre una llamada de dos minutos y unas
 /// cifras equivocadas que nadie detecta.
 class _TarjetaFallida extends StatelessWidget {
-  const _TarjetaFallida({required this.fallo});
+  const _TarjetaFallida({required this.fallo, this.onElegirSede});
 
   final Map<String, dynamic> fallo;
+
+  /// Nulo cuando el archivo está mal formado (EstructuraInvalida): ahí no hay
+  /// nada que la persona pueda arreglar desde la pantalla, hay que corregir
+  /// el Excel. Cuando no es nulo, es justo lo contrario: el archivo se leyó
+  /// bien y solo falta decidir a qué sede pertenece.
+  final VoidCallback? onElegirSede;
 
   @override
   Widget build(BuildContext context) => Container(
@@ -344,6 +626,20 @@ class _TarjetaFallida extends StatelessWidget {
                   fontSize: 12,
                   color: Paleta.critico,
                   fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+            if (onElegirSede != null) ...[
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: onElegirSede,
+                icon: const Icon(Icons.add_location_alt_outlined, size: 17),
+                label: const Text('Elegir sede'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Paleta.sello,
+                  side: const BorderSide(color: Paleta.regla),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  minimumSize: const Size.fromHeight(0),
                 ),
               ),
             ],

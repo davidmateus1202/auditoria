@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../datos/repositorios.dart';
 import '../dominio/modelos.dart';
 import '../nucleo/api.dart';
+import '../nucleo/descargas.dart';
 import '../nucleo/tema.dart';
 import '../widgets/comunes.dart';
 import 'inicio.dart' show consolidadoProvider;
@@ -38,11 +39,16 @@ class PantallaCorte extends ConsumerWidget {
             PantallaError(error: e, reintentar: () => ref.invalidate(cortesProvider)),
         data: (lista) {
           if (lista.isEmpty) {
-            return const SinContenido(
+            return SinContenido(
               icono: Icons.calendar_month_outlined,
               titulo: 'Todavía no hay ningún corte',
-              detalle: 'Importe la matriz de seguimiento desde el servidor para '
-                  'abrir el primer mes.',
+              detalle: 'Abra el mes para empezar a registrar el seguimiento; '
+                  'luego podrá importar la matriz ya diligenciada.',
+              accion: FilledButton.icon(
+                icon: const Icon(Icons.calendar_month_outlined, size: 18),
+                label: const Text('Abrir el mes'),
+                onPressed: () => _abrirMes(context, ref),
+              ),
             );
           }
 
@@ -59,10 +65,14 @@ class PantallaCorte extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
               children: [
                 if (abierto == null)
-                  const Aviso(
+                  Aviso(
                     icono: Icons.lock_outline,
                     mensaje: 'No hay ningún mes abierto. Todos los cortes '
                         'registrados están cerrados y sus cifras congeladas.',
+                    accion: TextButton(
+                      onPressed: () => _abrirMes(context, ref),
+                      child: const Text('Abrir mes'),
+                    ),
                   )
                 else
                   _MesAbierto(periodo: abierto.periodo),
@@ -102,6 +112,65 @@ class PantallaCorte extends ConsumerWidget {
   }
 }
 
+/// Pide el periodo (con el mes actual ya puesto) y abre el corte.
+///
+/// Abrir el mes es lo que arrastra los hallazgos vigentes al seguimiento; sin
+/// esto no hay forma de que Inicio, Corte ni Consolidado tengan algo que
+/// mostrar, aunque ya existan auditorías confirmadas.
+Future<void> _abrirMes(BuildContext context, WidgetRef ref) async {
+  final ahora = DateTime.now();
+  final controlador = TextEditingController(
+    text: '${ahora.year}-${ahora.month.toString().padLeft(2, '0')}',
+  );
+
+  final periodo = await showDialog<String>(
+    context: context,
+    builder: (contextoDialogo) => AlertDialog(
+      title: const Text('Abrir corte del mes'),
+      content: TextField(
+        controller: controlador,
+        decoration: const InputDecoration(
+          labelText: 'Periodo',
+          hintText: 'AAAA-MM',
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(contextoDialogo),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(contextoDialogo, controlador.text.trim()),
+          child: const Text('Abrir'),
+        ),
+      ],
+    ),
+  );
+
+  if (periodo == null || periodo.isEmpty) return;
+
+  if (!RegExp(r'^\d{4}-(0[1-9]|1[0-2])$').hasMatch(periodo)) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('El periodo debe tener el formato AAAA-MM.')),
+      );
+    }
+    return;
+  }
+
+  try {
+    await ref.read(repositorioProvider).abrirCorte(periodo);
+    ref.invalidate(cortesProvider);
+    ref.invalidate(consolidadoProvider);
+  } on ErrorApi catch (e) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.mensaje), backgroundColor: Paleta.critico),
+      );
+    }
+  }
+}
+
 class _MesAbierto extends ConsumerStatefulWidget {
   const _MesAbierto({required this.periodo});
 
@@ -120,8 +189,17 @@ class _MesAbiertoEstado extends ConsumerState<_MesAbierto> {
     try {
       final bytes =
           await ref.read(repositorioProvider).descargarMatriz(widget.periodo);
-      _avisar('Matriz de ${Formato.periodo(widget.periodo)} generada '
-          '(${(bytes.length / 1024).round()} KB).');
+
+      final guardado = await guardarArchivo(
+        nombre: 'seguimiento-hallazgos-${widget.periodo}.xlsx',
+        bytes: bytes,
+        extensiones: const ['xlsx'],
+      );
+
+      if (guardado) {
+        _avisar('Matriz de ${Formato.periodo(widget.periodo)} descargada '
+            '(${(bytes.length / 1024).round()} KB).');
+      }
     } catch (e) {
       _avisar('No se pudo descargar: $e', error: true);
     } finally {
@@ -133,18 +211,18 @@ class _MesAbiertoEstado extends ConsumerState<_MesAbierto> {
     final elegido = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: const ['xlsx', 'xls'],
-      withData: false,
+      withData: true,
     );
 
     final archivo = elegido?.files.firstOrNull;
-    if (archivo?.path == null) return;
+    if (archivo?.bytes == null) return;
 
     setState(() => _trabajando = true);
 
     try {
       final resumen = await ref.read(repositorioProvider).subirMatriz(
             widget.periodo,
-            archivo!.path!,
+            archivo!.bytes!,
             archivo.name,
           );
 

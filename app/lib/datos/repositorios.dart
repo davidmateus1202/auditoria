@@ -51,6 +51,18 @@ class Repositorio {
         .toList();
   }
 
+  /// Registra una sede que el catálogo todavía no conoce. Vive aquí, y no
+  /// solo en una pantalla de administración, porque el momento más común en
+  /// que hace falta es a mitad de una carga que no pudo identificarla.
+  Future<Sede> crearSede({required String codigo, required String nombre}) async {
+    final r = await _api.enviar('/sedes', cuerpo: {
+      'codigo': codigo,
+      'nombre': nombre,
+    });
+
+    return Sede.desdeJson((r['datos'] as Map).cast<String, dynamic>());
+  }
+
   Future<List<Estandar>> estandares() async {
     final r = await _api.obtener('/catalogos/estandares');
 
@@ -116,7 +128,7 @@ class Repositorio {
   /// separado, así que el que falle no tumba la carga de los demás: la
   /// respuesta trae las que entraron y las que no, con su motivo.
   Future<Map<String, dynamic>> cargarAuditorias(
-    List<({String ruta, String nombre})> archivos, {
+    List<({List<int> bytes, String nombre})> archivos, {
     int? sedeId,
     String? periodo,
   }) async {
@@ -125,7 +137,7 @@ class Repositorio {
     for (final a in archivos) {
       formulario.files.add(MapEntry(
         'archivos[]',
-        await MultipartFile.fromFile(a.ruta, filename: a.nombre),
+        MultipartFile.fromBytes(a.bytes, filename: a.nombre),
       ));
     }
 
@@ -171,8 +183,13 @@ class Repositorio {
         'decisiones': decisiones.map((k, v) => MapEntry('$k', v)),
       });
 
-  Future<void> eliminarAuditoria(int auditoriaId) =>
-      _api.dio.delete<dynamic>('/auditorias/$auditoriaId');
+  Future<void> eliminarAuditoria(int auditoriaId) async {
+    try {
+      await _api.dio.delete<dynamic>('/auditorias/$auditoriaId');
+    } on DioException catch (e) {
+      throw e.error is ErrorApi ? e.error! as ErrorApi : ErrorApi('$e');
+    }
+  }
 
   // ── Cortes mensuales ─────────────────────────────────────────────────────
 
@@ -218,19 +235,23 @@ class Repositorio {
 
   Future<Map<String, dynamic>> subirMatriz(
     String periodo,
-    String rutaArchivo,
+    List<int> bytesArchivo,
     String nombre,
   ) async {
     final formulario = FormData.fromMap({
-      'archivo': await MultipartFile.fromFile(rutaArchivo, filename: nombre),
+      'archivo': MultipartFile.fromBytes(bytesArchivo, filename: nombre),
     });
 
-    final r = await _api.dio.post<dynamic>(
-      '/cortes/$periodo/seguimiento',
-      data: formulario,
-    );
+    try {
+      final r = await _api.dio.post<dynamic>(
+        '/cortes/$periodo/seguimiento',
+        data: formulario,
+      );
 
-    return (r.data as Map).cast<String, dynamic>();
+      return (r.data as Map).cast<String, dynamic>();
+    } on DioException catch (e) {
+      throw e.error is ErrorApi ? e.error! as ErrorApi : ErrorApi('$e');
+    }
   }
 
   // ── Consolidado ──────────────────────────────────────────────────────────

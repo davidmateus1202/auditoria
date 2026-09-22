@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../datos/repositorios.dart';
 import '../dominio/enums.dart';
 import '../dominio/modelos.dart';
+import '../nucleo/descargas.dart';
 import '../nucleo/tema.dart';
 import '../widgets/comunes.dart';
 import 'inicio.dart' show consolidadoProvider, estandaresProvider;
@@ -42,10 +43,18 @@ class _PantallaConsolidadoEstado extends ConsumerState<PantallaConsolidado>
 
       if (!mounted) return;
 
+      final guardado = await guardarArchivo(
+        nombre: 'consolidado-$periodo.xlsx',
+        bytes: bytes,
+        extensiones: const ['xlsx'],
+      );
+
+      if (!mounted || !guardado) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Consolidado de ${Formato.periodo(periodo)} generado '
+            'Consolidado de ${Formato.periodo(periodo)} descargado '
             '(${(bytes.length / 1024).round()} KB).',
           ),
         ),
