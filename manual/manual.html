@@ -1,0 +1,860 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Guía de uso · Auditoría SUH</title>
+<style>
+:root{
+  --ink:#1c1e24; --muted:#5d6370; --line:#dcdbd5;
+  --brand:#2E3A8C; --brand-2:#4554b8; --brand-soft:#E4E7F6; --brand-ink:#1f2866;
+  --paper:#F7F6F2; --sand:#EEEDE8;
+  --red:#A3302A; --red-soft:#F6E1DF;
+  --amber:#8A6514; --amber-soft:#F4EAD2;
+  --green:#2B6B4E; --green-soft:#DCEDE3;
+  --gray:#7A7F87; --gray-soft:#E8E8E5;
+}
+@page{size:A4;margin:0}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:#9a9a96}
+body{font-family:"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;color:var(--ink);font-size:10.4pt;line-height:1.45;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.page{width:210mm;height:297mm;position:relative;overflow:hidden;background:#fff;padding:15mm 16mm 20mm;margin:0 auto 6mm;page-break-after:always;break-after:page}
+@media print{html,body{background:#fff}.page{margin:0}}
+h1,h2,h3{font-family:"Segoe UI Variable Display","Segoe UI",sans-serif;margin:0;line-height:1.15}
+h1{font-size:25pt;font-weight:700;letter-spacing:-.01em}
+h2{font-size:15pt;font-weight:700;margin:6mm 0 3mm}
+h3{font-size:11.5pt;font-weight:700;margin:0 0 1.5mm}
+p{margin:0 0 2.5mm}
+.muted{color:var(--muted)}
+svg.i{width:1em;height:1em;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.15em;flex:none}
+
+/* pie de página */
+.foot{position:absolute;left:16mm;right:16mm;bottom:9mm;display:flex;justify-content:space-between;align-items:center;font-size:8pt;color:var(--muted);border-top:1px solid var(--line);padding-top:2.5mm}
+.foot b{color:var(--brand);font-weight:600}
+.pnum{display:inline-flex;align-items:center;justify-content:center;min-width:7mm;height:7mm;border-radius:50%;background:var(--brand);color:#fff;font-weight:700;font-size:8.5pt}
+
+/* encabezado de tarea */
+.task-top{display:flex;align-items:center;gap:4mm;margin-bottom:4mm}
+.task-num{width:17mm;height:17mm;border-radius:5mm;background:var(--brand);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;flex:none;box-shadow:0 2mm 4mm rgba(46,58,140,.25)}
+.task-num small{font-size:6.5pt;letter-spacing:.12em;text-transform:uppercase;opacity:.8}
+.task-num span{font-size:20pt;font-weight:800;line-height:1}
+.task-top .kicker{font-size:8pt;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--brand)}
+.goal{display:flex;gap:3mm;align-items:stretch;margin-bottom:4mm}
+.goal .box{flex:1;background:var(--paper);border:1px solid var(--line);border-radius:3mm;padding:3mm 4mm;font-size:9.6pt}
+.goal .box .lbl{font-size:7.2pt;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:flex;gap:1.5mm;align-items:center;margin-bottom:1mm}
+.where{display:inline-flex;gap:1.5mm;align-items:center;font-weight:600;color:var(--brand-ink)}
+.where .sep{color:var(--muted);font-weight:400}
+
+/* elementos de interfaz dentro del texto */
+.btn{display:inline-block;background:var(--brand);color:#fff;font-weight:600;font-size:.88em;padding:.12em .6em;border-radius:1.2mm;white-space:nowrap}
+.ui{display:inline-block;border:1px solid #b9bccb;background:#fff;color:var(--brand-ink);font-weight:600;font-size:.88em;padding:.08em .5em;border-radius:1.2mm;white-space:nowrap}
+.chip{display:inline-block;font-size:7.2pt;font-weight:700;letter-spacing:.05em;padding:.25em .65em;border-radius:1mm;white-space:nowrap;text-transform:uppercase}
+.c-red{background:var(--red-soft);color:var(--red)} .c-amber{background:var(--amber-soft);color:var(--amber)}
+.c-green{background:var(--green-soft);color:var(--green)} .c-gray{background:var(--gray-soft);color:#555a61}
+.c-brand{background:var(--brand-soft);color:var(--brand)}
+
+/* pasos numerados */
+ol.steps{list-style:none;margin:0;padding:0;counter-reset:s}
+ol.steps>li{position:relative;padding:0 0 3.2mm 11mm;min-height:8mm}
+ol.steps>li::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:-.3mm;width:7.2mm;height:7.2mm;border-radius:50%;background:var(--brand);color:#fff;font-weight:700;font-size:9.5pt;display:flex;align-items:center;justify-content:center}
+ol.steps>li:not(:last-child)::after{content:"";position:absolute;left:3.5mm;top:7.6mm;bottom:.6mm;width:.4mm;background:var(--brand-soft)}
+ol.steps>li b.v{color:var(--ink)}
+ol.steps.compact>li{padding-bottom:2.2mm}
+ol.steps[start="2"]{counter-reset:s 1} ol.steps[start="3"]{counter-reset:s 2} ol.steps[start="5"]{counter-reset:s 4}
+
+/* avisos */
+.note{display:flex;gap:3mm;border-radius:3mm;padding:3mm 4mm;font-size:9.5pt;margin:3mm 0;break-inside:avoid}
+.note .ic{width:7mm;height:7mm;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;font-size:11pt}
+.note b.t{display:block;font-size:8pt;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.5mm}
+.tip{background:var(--brand-soft)} .tip .ic{background:var(--brand);color:#fff} .tip b.t{color:var(--brand)}
+.warn{background:var(--amber-soft)} .warn .ic{background:var(--amber);color:#fff} .warn b.t{color:var(--amber)}
+.stop{background:var(--red-soft)} .stop .ic{background:var(--red);color:#fff} .stop b.t{color:var(--red)}
+.ok{background:var(--green-soft)} .ok .ic{background:var(--green);color:#fff} .ok b.t{color:var(--green)}
+
+/* capturas con marco de navegador */
+.frame{border-radius:3mm;overflow:hidden;border:1px solid #c9c8c2;box-shadow:0 2.5mm 6mm rgba(20,24,40,.13);background:#fff;break-inside:avoid}
+.frame .bar{height:6.5mm;background:#e7e6e1;display:flex;align-items:center;gap:1.4mm;padding:0 3mm;border-bottom:1px solid #d6d5cf}
+.frame .bar i{width:2.2mm;height:2.2mm;border-radius:50%;background:#c9c7c0;display:block}
+.frame .bar i:nth-child(1){background:#e0675e}.frame .bar i:nth-child(2){background:#e3b341}.frame .bar i:nth-child(3){background:#5fb871}
+.frame .bar .url{margin-left:3mm;flex:1;max-width:70mm;height:4mm;border-radius:2mm;background:#fff;font-size:6.5pt;color:var(--muted);display:flex;align-items:center;padding:0 2.5mm}
+.shot{position:relative;overflow:hidden;width:100%}
+.shot img{position:absolute;display:block;max-width:none}
+.pin{position:absolute;width:7.4mm;height:7.4mm;margin:-3.7mm 0 0 -3.7mm;border-radius:50%;background:var(--brand);color:#fff;font-weight:800;font-size:10pt;display:flex;align-items:center;justify-content:center;border:.6mm solid #fff;box-shadow:0 .8mm 2mm rgba(0,0,0,.35);z-index:3}
+.pin.l{background:#D9822B}
+.hl{position:absolute;border:.7mm solid #D9822B;border-radius:1.6mm;background:rgba(217,130,43,.10);z-index:2}
+.hl.b{border-color:var(--brand-2);background:rgba(69,84,184,.10)}
+.cap{font-size:8pt;color:var(--muted);margin-top:2mm;display:flex;gap:2mm;align-items:baseline}
+.cap b{color:var(--ink)}
+
+/* leyenda de letras */
+.legend{display:grid;grid-template-columns:1fr 1fr;gap:2mm 5mm;margin-top:3mm;font-size:9pt}
+.legend div{display:flex;gap:2mm;align-items:flex-start}
+.lk{width:5.6mm;height:5.6mm;border-radius:50%;background:#D9822B;color:#fff;font-weight:800;font-size:8pt;display:flex;align-items:center;justify-content:center;flex:none;margin-top:.2mm}
+.lk.n{background:var(--brand)}
+
+.cols{display:flex;gap:6mm}
+.cols>*{flex:1;min-width:0}
+.sec{display:flex;align-items:center;gap:2.5mm;font-size:8pt;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--brand);margin:5mm 0 3mm}
+.sec::after{content:"";flex:1;height:1px;background:var(--line)}
+
+/* portada */
+.cover{padding:0;background:linear-gradient(160deg,#2E3A8C 0%,#1f2866 62%,#18204f 100%);color:#fff}
+.cover .in{position:absolute;inset:0;padding:22mm 20mm}
+.cover .org{font-size:8.5pt;letter-spacing:.16em;text-transform:uppercase;opacity:.75;font-weight:600}
+.cover h1{font-size:44pt;line-height:1;margin:16mm 0 4mm;letter-spacing:-.02em}
+.cover h1 em{font-style:normal;color:#b9c2ff}
+.cover .sub{font-size:13pt;opacity:.9;max-width:130mm}
+.cover .tag{display:inline-flex;gap:2mm;align-items:center;margin-top:7mm;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);padding:2mm 4mm;border-radius:10mm;font-size:9.5pt;font-weight:600}
+.cover .art{position:absolute;left:24mm;right:-30mm;bottom:34mm;height:105mm}
+.cover .art .frame{position:absolute;left:0;top:0;width:190mm;transform:rotate(-4deg);box-shadow:0 8mm 20mm rgba(0,0,0,.45);border:none}
+.cover .float{position:absolute;background:#fff;color:var(--ink);border-radius:3mm;padding:3mm 4mm;box-shadow:0 4mm 10mm rgba(0,0,0,.35);font-size:9pt;z-index:5;display:flex;gap:2.5mm;align-items:center}
+.cover .bottom{position:absolute;left:20mm;right:20mm;bottom:14mm;display:flex;justify-content:space-between;font-size:8.5pt;opacity:.75}
+
+/* índice visual */
+.toc{display:grid;grid-template-columns:1fr 1fr;gap:3.5mm}
+.toc a{display:flex;gap:3.5mm;align-items:center;text-decoration:none;color:inherit;border:1px solid var(--line);border-radius:3mm;padding:3.5mm;background:#fff}
+.toc .n{width:10mm;height:10mm;border-radius:2.5mm;background:var(--brand-soft);color:var(--brand);display:flex;align-items:center;justify-content:center;font-size:13pt;flex:none}
+.toc b{display:block;font-size:10.5pt}
+.toc small{color:var(--muted);font-size:8.5pt;display:block;line-height:1.3}
+.toc .pg{margin-left:auto;font-weight:700;color:var(--brand);font-size:10pt}
+
+/* tarjetas */
+.cards{display:grid;gap:3mm}
+.cards.c2{grid-template-columns:1fr 1fr}.cards.c3{grid-template-columns:1fr 1fr 1fr}.cards.c4{grid-template-columns:repeat(4,1fr)}
+.card{border:1px solid var(--line);border-radius:3mm;padding:3.2mm 3.6mm;background:#fff;font-size:9.2pt;break-inside:avoid}
+.card .hd{display:flex;gap:2mm;align-items:center;font-weight:700;font-size:10pt;margin-bottom:1mm}
+.card .ico{width:8mm;height:8mm;border-radius:2mm;background:var(--brand-soft);color:var(--brand);display:flex;align-items:center;justify-content:center;font-size:11pt;flex:none}
+
+/* estados */
+.states{display:grid;grid-template-columns:1fr 1fr;gap:3mm}
+.state{border-radius:3mm;padding:4mm;display:flex;gap:3.5mm;align-items:flex-start}
+.state .dot{width:9mm;height:9mm;border-radius:50%;flex:none;border:1.2mm solid rgba(255,255,255,.7)}
+.state h3{font-size:10.5pt;margin-bottom:.8mm}
+.state p{font-size:9pt;margin:0}
+
+/* flujo horizontal */
+.flow{display:flex;align-items:stretch;gap:0}
+.flow .st{flex:1;background:#fff;border:1px solid var(--line);border-radius:3mm;padding:3mm;text-align:center;font-size:8.6pt;position:relative}
+.flow .st .ico{width:10mm;height:10mm;border-radius:50%;background:var(--brand-soft);color:var(--brand);display:flex;align-items:center;justify-content:center;margin:0 auto 1.5mm;font-size:13pt}
+.flow .st b{display:block;font-size:9.6pt;margin-bottom:.5mm}
+.flow .ar{width:7mm;display:flex;align-items:center;justify-content:center;color:var(--brand);font-size:12pt;flex:none}
+.flow .st.hot{border:.6mm solid var(--brand);background:var(--brand-soft)}
+
+/* maqueta de cruce */
+.mock{background:var(--sand);border-radius:3mm;padding:4mm;border:1px solid #d3d2cb}
+.mock .mh{display:flex;justify-content:space-between;align-items:center;font-size:9pt;margin-bottom:2.5mm}
+.mock .alert{background:var(--amber-soft);border-left:1mm solid var(--amber);padding:2mm 3mm;font-size:8.8pt;color:#5c440c;border-radius:1mm;margin-bottom:3mm}
+.mock .mc{background:#fbfaf7;border:1px solid #d6d5cf;border-radius:2mm;padding:3mm;margin-bottom:2.5mm;font-size:8.8pt}
+.mock .mc .row{display:flex;gap:2mm;margin-top:2mm}
+.mock .opt{border:1px solid #b9bccb;background:#fff;border-radius:1.2mm;padding:1mm 2.5mm;font-size:8pt;font-weight:600;color:var(--brand-ink)}
+.mock .opt.sel{background:var(--brand);border-color:var(--brand);color:#fff}
+.mock .cmp{display:flex;gap:2mm;margin-top:2mm}
+.mock .cmp div{flex:1;background:#fff;border:1px dashed #c6c5bf;border-radius:1.5mm;padding:2mm;font-size:8pt}
+.mock .cmp small{display:block;font-size:6.8pt;font-weight:700;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+.mock .mf{display:flex;justify-content:space-between;align-items:center;background:#fff;border:1px solid #d6d5cf;border-radius:2mm;padding:2.5mm 3mm;font-size:8.8pt}
+
+.dest{display:grid;grid-template-columns:1fr 1fr;gap:2.5mm}
+.dest .card{padding:2.8mm 3.2mm}
+.dest .opts{margin-top:1.5mm;display:flex;flex-wrap:wrap;gap:1.2mm}
+.dest .opts span{font-size:7.6pt;border:1px solid #b9bccb;border-radius:1mm;padding:.3mm 1.6mm;color:var(--brand-ink);font-weight:600;background:#fff}
+
+/* preguntas */
+.faq{display:grid;grid-template-columns:1fr 1fr;gap:3.5mm}
+.faq .q{border-radius:3mm;border:1px solid var(--line);padding:3.5mm 4mm;background:#fff;break-inside:avoid}
+.faq .q h3{display:flex;gap:2mm;align-items:flex-start;font-size:10pt;color:var(--brand-ink)}
+.faq .q h3 svg{color:var(--brand);margin-top:.3mm;font-size:12pt}
+.faq .q p{font-size:9.1pt;margin:1.5mm 0 0}
+
+/* checklist */
+.check{list-style:none;margin:0;padding:0}
+.check li{display:flex;gap:3mm;align-items:flex-start;padding:2.6mm 0;border-bottom:1px dashed var(--line);font-size:9.8pt}
+.check li .bx{width:5.2mm;height:5.2mm;border:.5mm solid var(--brand);border-radius:1.2mm;flex:none;margin-top:.3mm}
+.check li small{display:block;color:var(--muted);font-size:8.6pt}
+
+.lanes .lane{border-radius:4mm;padding:4mm;margin-bottom:4mm}
+.lanes .lane .lt{font-size:7.6pt;font-weight:800;letter-spacing:.14em;text-transform:uppercase;margin-bottom:3mm;display:flex;justify-content:space-between}
+.loop{display:flex;align-items:center;justify-content:flex-end;gap:2mm;color:var(--brand);font-size:8.5pt;font-weight:600;margin-top:2.5mm}
+</style>
+</head>
+<body>
+
+<!-- Iconos -->
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3.5 2.5 20h19z"/><path d="M12 10v4.5M12 17.2h.01"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-table" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 4v16"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M12 15V3M7 8l5-5 5 5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
+  <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/></symbol>
+  <symbol id="i-bang" viewBox="0 0 24 24"><path d="M12 6v8M12 18h.01"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+  <symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 6-6"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M8.5 13h7M8.5 17h5"/></symbol>
+  <symbol id="i-merge" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.6"/><circle cx="18" cy="18" r="2.6"/><path d="M6 8.6V15a3 3 0 0 0 3 3h6.4M18 15.4V9a3 3 0 0 0-3-3H8.6"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14"/></symbol>
+  <symbol id="i-login" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-q" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M9.5 9.3a2.5 2.5 0 1 1 3.6 2.2c-.7.4-1.1 1-1.1 1.8v.5M12 17h.01"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h14v16H6a2 2 0 0 0-2 2z"/><path d="M4 21V5M8 7h8"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.6-4.5L4 8M4 4v4h4M4 13a8 8 0 0 0 14.6 4.5L20 16M20 20v-4h-4"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-hand" viewBox="0 0 24 24"><path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V12M11 11.5V4a1.5 1.5 0 0 1 3 0v7.5M14 11.5V6a1.5 1.5 0 0 1 3 0v7c0 4.4-2.6 8-7 8-3 0-4.4-1.5-6-4.5L2.6 14a1.5 1.5 0 0 1 2.6-1.5L8 16"/></symbol>
+</svg>
+
+<!-- ========================= PORTADA ========================= -->
+<section class="page cover">
+  <div class="in">
+    <div class="org">E.S.E. Municipal · Villavicencio, Meta</div>
+    <h1>Guía de uso<br><em>Auditoría SUH</em></h1>
+    <div class="sub">Paso a paso para cargar autoevaluaciones, hacer seguimiento a los hallazgos y cerrar el corte de cada mes.</div>
+    <div class="tag"><svg class="i"><use href="#i-book"/></svg> Sistema Único de Habilitación · Resolución 3100 de 2019</div>
+  </div>
+  <div class="art">
+    <div class="frame"><div class="bar"><i></i><i></i><i></i><span class="url">Auditoría SUH · Inicio</span></div>
+      <div class="shot" data-src="img/fig02.png" data-crop="0,0,2000,1201"></div></div>
+    <div class="float" style="left:-6mm;top:62mm"><span class="chip c-red">Abierto</span><span class="chip c-amber">Con evidencia</span><span class="chip c-green">Cerrado</span></div>
+    <div class="float" style="right:46mm;top:-10mm"><svg class="i" style="color:var(--green);font-size:14pt"><use href="#i-check"/></svg><div><b>Corte del mes</b><br><span class="muted" style="font-size:8pt">Descargar · diligenciar · subir</span></div></div>
+  </div>
+  <div class="bottom"><span>Versión web · octubre de 2026</span><span>No requiere conocimientos técnicos</span></div>
+</section>
+
+<!-- ========================= CÓMO USAR / ÍNDICE ========================= -->
+<section class="page">
+  <div class="kicker" style="font-size:8pt;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--brand)">Empiece aquí</div>
+  <h1 style="margin:1mm 0 3mm">¿Qué quiere hacer hoy?</h1>
+  <p class="muted" style="font-size:11pt;max-width:150mm">Cada tarea de esta guía ocupa una o dos páginas: una captura de la pantalla con números y, al lado, los pasos en el mismo orden. Vaya directo a la que necesite.</p>
+
+  <div class="toc" style="margin-top:6mm">
+    <a href="#t1"><span class="n"><svg class="i"><use href="#i-login"/></svg></span><span><b>1 · Entrar a la aplicación</b><small>Correo, contraseña y salir</small></span><span class="pg" data-ref="t1"></span></a>
+    <a href="#t2"><span class="n"><svg class="i"><use href="#i-home"/></svg></span><span><b>2 · Leer el tablero de Inicio</b><small>Cómo va el mes, de un vistazo</small></span><span class="pg" data-ref="t2"></span></a>
+    <a href="#t3"><span class="n"><svg class="i"><use href="#i-up"/></svg></span><span><b>3 · Cargar una autoevaluación</b><small>Subir los «SUH &lt;sede&gt;.xlsx»</small></span><span class="pg" data-ref="t3"></span></a>
+    <a href="#t4"><span class="n"><svg class="i"><use href="#i-merge"/></svg></span><span><b>4 · Confirmar el cruce</b><small>Decidir y publicar la auditoría</small></span><span class="pg" data-ref="t4"></span></a>
+    <a href="#t5"><span class="n"><svg class="i"><use href="#i-search"/></svg></span><span><b>5 · Buscar un hallazgo</b><small>Palabras clave y filtros</small></span><span class="pg" data-ref="t5"></span></a>
+    <a href="#t6"><span class="n"><svg class="i"><use href="#i-pen"/></svg></span><span><b>6 · Registrar seguimiento</b><small>Cambiar estado y evidencia</small></span><span class="pg" data-ref="t6"></span></a>
+    <a href="#t7"><span class="n"><svg class="i"><use href="#i-cal"/></svg></span><span><b>7 · Hacer el corte del mes</b><small>Abrir, diligenciar y cerrar</small></span><span class="pg" data-ref="t7"></span></a>
+    <a href="#t8"><span class="n"><svg class="i"><use href="#i-table"/></svg></span><span><b>8 · Ver el consolidado</b><small>Resúmenes, Excel y serie mensual</small></span><span class="pg" data-ref="t8"></span></a>
+  </div>
+
+  <div class="sec">Cómo leer las capturas</div>
+  <div class="cards c3">
+    <div class="card"><div class="hd"><span class="pin" style="position:static;margin:0;width:7mm;height:7mm;font-size:9pt">1</span> Círculo azul</div>Es un <b>paso</b>. Coincide con el número de la lista de instrucciones.</div>
+    <div class="card"><div class="hd"><span class="pin l" style="position:static;margin:0;width:7mm;height:7mm;font-size:9pt">A</span> Círculo naranja</div>Señala una <b>parte de la pantalla</b> que se explica debajo de la imagen.</div>
+    <div class="card"><div class="hd"><span class="btn">Guardar</span></div>Así se escriben los <b>botones</b> y opciones que debe pulsar: <span class="ui">Hallazgos</span></div>
+  </div>
+
+  <div class="sec">Atajos de esta guía</div>
+  <div class="cards c3">
+    <div class="card"><div class="hd"><span class="ico"><svg class="i"><use href="#i-book"/></svg></span>Palabras clave</div>Sede, hallazgo, corte… explicados en una página. <b data-ref-text="glos"></b></div>
+    <div class="card"><div class="hd"><span class="ico"><svg class="i"><use href="#i-refresh"/></svg></span>Su rutina mensual</div>Lista para marcar con todo el ciclo del mes. <b data-ref-text="rutina"></b></div>
+    <div class="card"><div class="hd"><span class="ico"><svg class="i"><use href="#i-q"/></svg></span>Si algo falla</div>Respuestas a los problemas más comunes. <b data-ref-text="faq"></b></div>
+  </div>
+  <div class="foot"><span><b>Auditoría SUH</b> · Guía de uso</span><span class="pnum"></span></div>
+</section>
+
+<!-- ========================= ANTES DE EMPEZAR ========================= -->
+<section class="page" id="glos">
+  <div class="kicker" style="font-size:8pt;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--brand)">Antes de empezar</div>
+  <h1 style="margin:1mm 0 3mm">La aplicación en 1 minuto</h1>
+  <p style="font-size:10.8pt;max-width:165mm">Reúne en un solo lugar los hallazgos de las autoevaluaciones SUH de cada sede y les hace seguimiento <b>mes a mes hasta cerrarlos</b>. Ya no hace falta cruzar varios Excel a mano ni armar el consolidado uno mismo.</p>
+
+  <div class="flow" style="margin:5mm 0 2mm">
+    <div class="st"><div class="ico"><svg class="i"><use href="#i-file"/></svg></div><b>Lee</b>los Excel de cada sede y saca los hallazgos</div>
+    <div class="ar"><svg class="i"><use href="#i-arrow"/></svg></div>
+    <div class="st"><div class="ico"><svg class="i"><use href="#i-merge"/></svg></div><b>Cruza</b>lo nuevo con lo que ya estaba abierto</div>
+    <div class="ar"><svg class="i"><use href="#i-arrow"/></svg></div>
+    <div class="st"><div class="ico"><svg class="i"><use href="#i-cal"/></svg></div><b>Organiza</b>el seguimiento en cortes mensuales</div>
+    <div class="ar"><svg class="i"><use href="#i-arrow"/></svg></div>
+    <div class="st"><div class="ico"><svg class="i"><use href="#i-chart"/></svg></div><b>Resume</b>por sede y estándar, y exporta a Excel</div>
+  </div>
+
+  <div class="sec">Palabras que verá en la aplicación</div>
+  <div class="cards c2">
+    <div class="card"><div class="hd"><span class="ico"><svg class="i"><use href="#i-pin"/></svg></span>Sede</div>Puesto o centro de salud evaluado: Barzal, Cemi, Comuneros, Esperanza, Kirpas, Morichal, Porvenir, Recreo, Reliquia…</div>
+    <div class="card"><div class="hd"><span class="ico"><svg class="i"><use href="#i-file"/></svg></span>Autoevaluación</div>El archivo «SUH &lt;sede&gt;.xlsx» con los criterios de la Resolución 3100. Cada carga queda como una <b>versión</b> nueva.</div>
+    <div class="card"><div class="hd"><span class="ico"><svg class="i"><use href="#i-alert"/></svg></span>Hallazgo</div>Un incumplimiento concreto de una sede, asociado a un estándar y, si aplica, a un servicio.</div>
+    <div class="card"><div class="hd"><span class="ico"><svg class="i"><use href="#i-table"/></svg></span>Estándar</div>Grupo de la Resolución 3100: talento humano, infraestructura, dotación, etc.</div>
+    <div class="card"><div class="hd"><span class="ico"><svg class="i"><use href="#i-merge"/></svg></span>Cruce</div>Comparación automática entre la autoevaluación recién subida y lo que la sede ya tenía abierto.</div>
+    <div class="card"><div class="hd"><span class="ico"><svg class="i"><use href="#i-cal"/></svg></span>Corte mensual</div>La «foto» del seguimiento de un mes. Abierto admite cambios; <b>cerrado, sus cifras se congelan</b>.</div>
+    <div class="card"><div class="hd"><span class="ico"><svg class="i"><use href="#i-down"/></svg></span>Matriz de seguimiento</div>El Excel del corte que se descarga, diligencia el equipo y se vuelve a subir.</div>
+    <div class="card"><div class="hd"><span class="ico"><svg class="i"><use href="#i-chart"/></svg></span>Consolidado</div>Resumen de todos los hallazgos del corte por sede, por estándar o en tabla sede × estándar.</div>
+  </div>
+
+  <div class="sec">Los 4 colores de un hallazgo</div>
+  <div class="states">
+    <div class="state" style="background:var(--red-soft)"><span class="dot" style="background:var(--red)"></span><div><h3 style="color:var(--red)">Abierto</h3><p>El incumplimiento sigue y no hay gestión registrada.</p></div></div>
+    <div class="state" style="background:var(--amber-soft)"><span class="dot" style="background:var(--amber)"></span><div><h3 style="color:var(--amber)">Abierto con evidencia</h3><p>Sigue abierto, pero ya hay acciones o soportes en curso.</p></div></div>
+    <div class="state" style="background:var(--green-soft)"><span class="dot" style="background:var(--green)"></span><div><h3 style="color:var(--green)">Cerrado</h3><p>Se resolvió. <b>Siempre exige escribir la evidencia</b> del cierre.</p></div></div>
+    <div class="state" style="background:var(--gray-soft)"><span class="dot" style="background:var(--gray)"></span><div><h3 style="color:#555a61">Sin dato</h3><p>Nadie reportó información de seguimiento en el corte.</p></div></div>
+  </div>
+  <div class="foot"><span><b>Auditoría SUH</b> · Guía de uso</span><span class="pnum"></span></div>
+</section>
+
+<!-- ========================= TAREA 1 · INGRESAR ========================= -->
+<section class="page" id="t1">
+  <div class="task-top"><div class="task-num"><small>Tarea</small><span>1</span></div>
+    <div><div class="kicker">Ingreso</div><h1>Entrar a la aplicación</h1></div></div>
+  <div class="goal">
+    <div class="box"><div class="lbl"><svg class="i"><use href="#i-target"/></svg>Para qué</div>Abrir su sesión con el correo y la contraseña que le asignaron.</div>
+    <div class="box"><div class="lbl"><svg class="i"><use href="#i-pin"/></svg>Dónde</div><span class="where">Pantalla de ingreso</span> — aparece sola si no ha iniciado sesión.</div>
+  </div>
+
+  <div class="cols" style="align-items:flex-start">
+    <div style="flex:1.15">
+      <div class="frame"><div class="bar"><i></i><i></i><i></i><span class="url">Auditoría SUH · Ingreso</span></div>
+        <div class="shot" data-src="img/fig01.png" data-crop="600,270,800,690">
+          <span class="pin" data-at="690,635">2</span>
+          <span class="pin" data-at="690,770">3</span>
+          <span class="hl" data-r="1222,746,46,46"></span><span class="pin l" data-at="1310,770">A</span>
+          <span class="pin" data-at="690,880">4</span>
+        </div></div>
+      <div class="legend" style="grid-template-columns:1fr"><div><span class="lk">A</span><span><b>Ojo:</b> muestra u oculta la contraseña para verificar que quedó bien escrita.</span></div></div>
+    </div>
+    <div>
+      <ol class="steps">
+        <li><b class="v">Abra la dirección</b> de la aplicación en el navegador.</li>
+        <li><b class="v">Escriba su correo</b> en el primer campo.</li>
+        <li><b class="v">Escriba la contraseña.</b> Si duda, pulse el ojo <span class="lk" style="display:inline-flex;width:4.6mm;height:4.6mm;font-size:7pt;vertical-align:-.3mm">A</span> para verla.</li>
+        <li><b class="v">Pulse</b> <span class="btn">Ingresar</span>. Se abre el tablero de Inicio.</li>
+      </ol>
+      <div class="note ok"><span class="ic"><svg class="i"><use href="#i-check"/></svg></span><div><b class="t">Listo</b>Si ve el menú a la izquierda y las cifras del mes, entró correctamente.</div></div>
+    </div>
+  </div>
+
+  <div class="sec">Si algo sale mal</div>
+  <div class="cards c2">
+    <div class="card"><div class="hd" style="color:var(--red)"><svg class="i"><use href="#i-alert"/></svg> Campo marcado en rojo</div>El correo no tiene un formato válido o la contraseña está vacía. Corrija el campo señalado.</div>
+    <div class="card"><div class="hd" style="color:var(--red)"><svg class="i"><use href="#i-alert"/></svg> Recuadro rojo bajo los campos</div>El servidor rechazó los datos. Lea el motivo, revise correo y contraseña e intente de nuevo.</div>
+  </div>
+
+  <div class="note tip"><span class="ic"><svg class="i"><use href="#i-login"/></svg></span><div><b class="t">Para salir</b>Pulse <span class="ui">Cerrar sesión</span> al pie del menú lateral. La aplicación le pide confirmar antes de cerrar.</div></div>
+  <div class="foot"><span><b>Auditoría SUH</b> · Guía de uso</span><span class="pnum"></span></div>
+</section>
+
+<!-- ========================= TAREA 2 · INICIO ========================= -->
+<section class="page" id="t2">
+  <div class="task-top"><div class="task-num"><small>Tarea</small><span>2</span></div>
+    <div><div class="kicker">Inicio</div><h1>Leer el tablero de Inicio</h1></div></div>
+  <div class="goal">
+    <div class="box"><div class="lbl"><svg class="i"><use href="#i-target"/></svg>Para qué</div>Saber en segundos cómo va el corte del mes y dónde están los problemas.</div>
+    <div class="box"><div class="lbl"><svg class="i"><use href="#i-pin"/></svg>Dónde</div><span class="where"><svg class="i"><use href="#i-home"/></svg> Menú <span class="sep">›</span> Inicio</span></div>
+  </div>
+
+  <div class="frame"><div class="bar"><i></i><i></i><i></i><span class="url">Auditoría SUH · Inicio</span></div>
+    <div class="shot" data-src="img/fig02.png" data-crop="0,0,2000,1201">
+      <span class="hl b" data-r="12,163,350,395"></span><span class="pin l" data-at="362,170">M</span>
+      <span class="pin" data-at="452,167">1</span>
+      <span class="pin" data-at="470,290">2</span>
+      <span class="pin" data-at="470,400">3</span>
+      <span class="pin" data-at="452,503">4</span>
+      <span class="pin" data-at="452,997">5</span>
+      <span class="hl" data-r="1858,22,110,52"></span><span class="pin l" data-at="1825,47">6</span>
+    </div></div>
+
+  <div class="cols" style="margin-top:5mm">
+    <div>
+      <h3>Léalo de arriba hacia abajo</h3>
+      <ol class="steps compact">
+        <li><b class="v">Aviso del corte:</b> de qué mes son las cifras y si el corte sigue abierto (aún pueden cambiar).</li>
+        <li><b class="v">Tres cifras:</b> total de hallazgos, % de avance (cerrados) y abiertos sin gestión.</li>
+        <li><b class="v">Barra de colores:</b> cuántos hay en cada uno de los 4 estados.</li>
+        <li><b class="v">Dónde se concentran:</b> barras por estándar. <i>Pulse una barra</i> para ver esos hallazgos.</li>
+        <li><b class="v">Sedes con más abiertos:</b> <i>pulse una sede</i> para ver sus hallazgos; <span class="ui">Ver todos</span> abre la lista completa.</li>
+      </ol>
+    </div>
+    <div>
+      <h3><span class="lk" style="display:inline-flex;vertical-align:-.6mm">M</span> El menú lateral</h3>
+      <div class="cards" style="gap:1.8mm">
+        <div class="card" style="padding:2mm 3mm"><b><svg class="i"><use href="#i-home"/></svg> Inicio</b> — cifras del corte vigente.</div>
+        <div class="card" style="padding:2mm 3mm"><b><svg class="i"><use href="#i-alert"/></svg> Hallazgos</b> — buscar y consultar con filtros.</div>
+        <div class="card" style="padding:2mm 3mm"><b><svg class="i"><use href="#i-cal"/></svg> Corte</b> — abrir, diligenciar y cerrar el mes.</div>
+        <div class="card" style="padding:2mm 3mm"><b><svg class="i"><use href="#i-table"/></svg> Consolidado</b> — resúmenes, evolución y Excel.</div>
+        <div class="card" style="padding:2mm 3mm"><b><svg class="i"><use href="#i-up"/></svg> Cargar auditoría</b> — subir autoevaluaciones.</div>
+      </div>
+      <p class="muted" style="font-size:8.6pt;margin-top:2mm"><span class="lk" style="display:inline-flex;width:4.6mm;height:4.6mm;font-size:7pt;vertical-align:-.3mm">6</span> Los íconos de arriba a la derecha llevan a <b>Cargar auditoría</b> y <b>actualizan</b> las cifras. En el celular, el menú se abre con el botón de menú superior.</p>
+    </div>
+  </div>
+  <div class="foot"><span><b>Auditoría SUH</b> · Guía de uso</span><span class="pnum"></span></div>
+</section>
+
+<!-- ========================= TAREA 3 · CARGAR ========================= -->
+<section class="page" id="t3">
+  <div class="task-top"><div class="task-num"><small>Tarea</small><span>3</span></div>
+    <div><div class="kicker">Cargar auditoría</div><h1>Cargar una autoevaluación</h1></div></div>
+  <div class="goal">
+    <div class="box"><div class="lbl"><svg class="i"><use href="#i-target"/></svg>Para qué</div>Meter al sistema los archivos «SUH &lt;sede&gt;.xlsx»; la aplicación extrae los hallazgos sola.</div>
+    <div class="box"><div class="lbl"><svg class="i"><use href="#i-pin"/></svg>Dónde</div><span class="where"><svg class="i"><use href="#i-up"/></svg> Menú <span class="sep">›</span> Cargar auditoría</span></div>
+  </div>
+
+  <div class="frame"><div class="bar"><i></i><i></i><i></i><span class="url">Auditoría SUH · Cargar auditoría</span></div>
+    <div class="shot" data-src="img/fig03.png" data-crop="0,0,2000,1050">
+      <span class="hl b" data-r="14,447,345,108"></span><span class="pin" data-at="362,452">1</span>
+      <span class="hl b" data-r="662,267,1052,204"></span><span class="pin" data-at="662,267">2</span>
+      <span class="pin l" data-at="640,512">A</span>
+      <span class="hl" data-r="1640,568,46,46"></span><span class="pin l" data-at="1725,591">B</span>
+    </div></div>
+  <div class="legend">
+    <div><span class="lk">A</span><span><b>Archivos cargados:</b> todas las cargas con sede, versión, estado (Publicada, Por confirmar, Procesando, Fallida), periodo y si es línea base. El <svg class="i"><use href="#i-eye"/></svg> abre una vista previa del Excel.</span></div>
+    <div><span class="lk">B</span><span><b>Papelera:</b> elimina la carga. Pide confirmación porque <b>el archivo original se borra</b> y no se puede deshacer.</span></div>
+  </div>
+
+  <div class="cols" style="margin-top:4mm">
+    <div>
+      <ol class="steps compact">
+        <li><b class="v">Pulse</b> <span class="ui">Cargar auditoría</span> en el menú.</li>
+        <li><b class="v">Pulse</b> <span class="ui">Elegir archivos</span> o <b>arrastre</b> los Excel a la zona punteada. Puede elegir varias sedes a la vez.</li>
+        <li><b class="v">Revise la lista</b> de elegidos (nombre y tamaño). La <b>X</b> quita uno antes de subir.</li>
+      </ol>
+    </div>
+    <div>
+      <ol class="steps compact" start="4" style="counter-reset:s 3">
+        <li><b class="v">Pulse</b> <span class="btn">Subir y procesar</span> y espere unos segundos.</li>
+        <li><b class="v">Revise «Procesadas»:</b> sede, versión, hallazgos extraídos, criterios evaluados y decisiones pendientes. Lo atípico sale en amarillo.</li>
+        <li><b class="v">Pulse</b> <span class="btn">Revisar el cruce</span> (o <span class="btn">Revisar y publicar</span>) y siga con la <b>Tarea 4</b>.</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="cols">
+    <div class="note warn" style="margin-top:1mm"><span class="ic"><svg class="i"><use href="#i-bang"/></svg></span><div><b class="t">¿No reconoce la sede?</b>El archivo aparece en «No se pudieron leer». Pulse <span class="ui">Elegir sede</span>, escójala de la lista o registre una nueva (código y nombre). La carga se reintenta sola.</div></div>
+    <div class="note tip" style="margin-top:1mm"><span class="ic"><svg class="i"><use href="#i-bulb"/></svg></span><div><b class="t">Ojo</b>Aquí <b>no</b> se sube la matriz mensual de seguimiento: esa va en la pantalla <b>Corte</b> (Tarea 7). Si un archivo falla, el error indica la hoja y la fila.</div></div>
+  </div>
+  <div class="foot"><span><b>Auditoría SUH</b> · Guía de uso</span><span class="pnum"></span></div>
+</section>
+
+<!-- ========================= TAREA 4 · CRUCE ========================= -->
+<section class="page" id="t4">
+  <div class="task-top"><div class="task-num"><small>Tarea</small><span>4</span></div>
+    <div><div class="kicker">Después de cargar</div><h1>Confirmar el cruce</h1></div></div>
+  <div class="goal">
+    <div class="box"><div class="lbl"><svg class="i"><use href="#i-target"/></svg>Para qué</div>Revisar lo que la aplicación propone para cada hallazgo y publicar la auditoría.</div>
+    <div class="box"><div class="lbl"><svg class="i"><use href="#i-lock"/></svg>Importante</div><b>Nada se aplica</b> hasta que usted pulse <span class="btn">Publicar auditoría</span>.</div>
+  </div>
+
+  <div class="cols" style="align-items:flex-start">
+    <div style="flex:1.05">
+      <div class="mock">
+        <div class="mh"><b>Centro de Salud Barzal</b><span class="muted">Versión 2 · 2026-09</span></div>
+        <div class="alert"><b>2 hallazgos</b> necesitan su decisión antes de publicar.</div>
+        <div class="mc"><span class="chip c-green">Candidato a cierre</span>
+          <div style="margin-top:1.5mm">El estándar se auditó y este problema ya no aparece.</div>
+          <div class="row"><span class="opt sel">Cerrar con evidencia</span><span class="opt">Mantener abierto</span></div></div>
+        <div class="mc"><span class="chip c-amber">Requiere revisión</span>
+          <div class="cmp"><div><small>Ya registrado</small>No cuenta con media caña en urgencias…</div><div><small>En el Excel nuevo</small>No cuenta con media caña (techo-pared) en urgencias…</div></div>
+          <div style="margin-top:1.5mm;font-size:8pt" class="muted">Parecido: <b style="color:var(--ink)">87 %</b></div>
+          <div class="row"><span class="opt">Es el mismo</span><span class="opt">Es uno nuevo</span><span class="opt">Descartar</span></div></div>
+        <div class="mf"><span><b style="color:var(--amber)">1 de 2</b> decisiones tomadas</span><span class="btn">Publicar auditoría</span></div>
+      </div>
+      <div class="cap"><b>Esquema ilustrativo</b> de la pantalla de confirmación (no es una captura real).</div>
+    </div>
+    <div>
+      <ol class="steps">
+        <li><b class="v">Lea el aviso de arriba:</b> dice cuántas decisiones faltan.</li>
+        <li><b class="v">Elija una opción</b> en cada tarjeta que tenga botones.</li>
+        <li><b class="v">Al cerrar, escriba la evidencia</b> (acta, contrato, registro fotográfico…). Sin ella no se puede cerrar.</li>
+        <li><b class="v">Mire el contador</b> del pie: «X de Y decisiones tomadas». Se pone <b style="color:var(--green)">verde</b> cuando están todas.</li>
+        <li><b class="v">Pulse</b> <span class="btn">Publicar auditoría</span>. Un mensaje resume cuántos quedaron nuevos, vigentes y cerrados.</li>
+      </ol>
+      <div class="note tip"><span class="ic"><svg class="i"><use href="#i-bulb"/></svg></span><div>Cuando el texto nuevo se parece a uno ya registrado, verá los dos <b>lado a lado</b> con el porcentaje de parecido.</div></div>
+    </div>
+  </div>
+
+  <div class="sec">Qué significa cada propuesta</div>
+  <p style="font-size:9.2pt;margin-bottom:2mm"><b style="color:var(--amber)">● Usted decide</b> — la aplicación espera su respuesta:</p>
+  <div class="dest">
+    <div class="card"><div class="hd">Conflicto</div>El mismo hallazgo se cambió en la app y en el Excel a la vez.<div class="opts"><span>Conservar la app</span><span>Tomar el Excel</span></div></div>
+    <div class="card"><div class="hd">Candidato a cierre</div>Se auditó el estándar y el problema ya no aparece.<div class="opts"><span>Cerrar con evidencia</span><span>Mantener abierto</span></div></div>
+    <div class="card"><div class="hd">Reincidencia</div>Estaba cerrado y vuelve a reportarse.<div class="opts"><span>Reabrir</span><span>Registrar como nuevo</span></div></div>
+    <div class="card"><div class="hd">Requiere revisión</div>Se parece a uno vigente, pero no tanto como para unirlos solo.<div class="opts"><span>Es el mismo</span><span>Es uno nuevo</span><span>Descartar</span></div></div>
+  </div>
+  <p style="font-size:9.2pt;margin:3mm 0 2mm"><b style="color:var(--green)">● Se aplica solo</b> — no requiere acción:</p>
+  <div class="cards c3">
+    <div class="card"><b>Nuevo</b> · no coincide con ningún hallazgo de la sede.</div>
+    <div class="card"><b>Persiste</b> · el problema sigue reportado; queda abierto.</div>
+    <div class="card"><b>No verificado</b> · el estándar no se evaluó; sigue abierto.</div>
+  </div>
+  <div class="foot"><span><b>Auditoría SUH</b> · Guía de uso</span><span class="pnum"></span></div>
+</section>
+
+<!-- ========================= TAREA 5 · BUSCAR ========================= -->
+<section class="page" id="t5">
+  <div class="task-top"><div class="task-num"><small>Tarea</small><span>5</span></div>
+    <div><div class="kicker">Hallazgos</div><h1>Buscar un hallazgo</h1></div></div>
+  <div class="goal">
+    <div class="box"><div class="lbl"><svg class="i"><use href="#i-target"/></svg>Para qué</div>Encontrar cualquier hallazgo de cualquier sede por palabras, sede, estándar o estado.</div>
+    <div class="box"><div class="lbl"><svg class="i"><use href="#i-pin"/></svg>Dónde</div><span class="where"><svg class="i"><use href="#i-alert"/></svg> Menú <span class="sep">›</span> Hallazgos</span></div>
+  </div>
+
+  <div class="frame"><div class="bar"><i></i><i></i><i></i><span class="url">Auditoría SUH · Hallazgos</span></div>
+    <div class="shot" data-src="img/fig04.png" data-crop="0,0,2000,1000">
+      <span class="hl b" data-r="14,230,345,60"></span><span class="pin" data-at="362,234">1</span>
+      <span class="pin" data-at="396,82">2</span>
+      <span class="hl b" data-r="392,157,398,52"></span><span class="pin" data-at="392,160">3</span>
+      <span class="hl b" data-r="802,157,188,52"></span><span class="pin" data-at="992,160">4</span>
+      <span class="pin" data-at="690,257">5</span>
+      <span class="pin l" data-at="395,390">A</span>
+      <span class="pin l" data-at="1845,318">B</span>
+    </div></div>
+  <div class="legend">
+    <div><span class="lk">A</span><span><b>Línea de color</b> a la izquierda: repite el estado para leer la lista de un vistazo.</span></div>
+    <div><span class="lk">B</span><span><b>Etiqueta de estado</b>: <span class="chip c-red">Abierto</span> <span class="chip c-amber">Con evidencia</span> <span class="chip c-green">Cerrado</span></span></div>
+  </div>
+
+  <div class="cols" style="margin-top:4mm;align-items:flex-start">
+    <div style="flex:1.4">
+      <ol class="steps compact">
+        <li><b class="v">Pulse</b> <span class="ui">Hallazgos</span> en el menú.</li>
+        <li><b class="v">Para buscar por palabras,</b> escríbalas en «Buscar en el texto del hallazgo» y pulse <b>Enter</b>. La X borra la búsqueda.</li>
+        <li><b class="v">Para filtrar,</b> pulse <span class="ui">Sede</span>, <span class="ui">Estándar</span> o <span class="ui">Estado</span> y elija una opción de la lista (imagen de la derecha).</li>
+        <li><span class="ui">✓ Solo vigentes</span> <b class="v">oculta los cerrados.</b></li>
+        <li><b class="v">Mire la franja gris:</b> cuántos hallazgos cumplen los filtros. Si ninguno, pulse <span class="ui">Quitar filtros</span>.</li>
+      </ol>
+    </div>
+    <div>
+      <div class="frame"><div class="shot" data-src="img/fig05.png" data-crop="719,167,562,560"></div></div>
+      <div class="cap"><b>Paso 3.</b> Lista de sedes al pulsar «Sede».</div>
+    </div>
+  </div>
+  <div class="foot"><span><b>Auditoría SUH</b> · Guía de uso</span><span class="pnum"></span></div>
+</section>
+
+<!-- ========================= TAREA 6 · SEGUIMIENTO ========================= -->
+<section class="page" id="t6">
+  <div class="task-top"><div class="task-num"><small>Tarea</small><span>6</span></div>
+    <div><div class="kicker">Ficha del hallazgo</div><h1>Registrar seguimiento</h1></div></div>
+  <div class="goal">
+    <div class="box"><div class="lbl"><svg class="i"><use href="#i-target"/></svg>Para qué</div>Cambiar el estado de un hallazgo y anotar la acción propuesta y la evidencia.</div>
+    <div class="box"><div class="lbl"><svg class="i"><use href="#i-pin"/></svg>Dónde</div><span class="where">Hallazgos <span class="sep">›</span> pulse una fila</span></div>
+  </div>
+
+  <div class="cols" style="align-items:flex-start">
+    <div>
+      <div class="frame"><div class="bar"><i></i><i></i><i></i><span class="url">Hallazgo</span></div>
+        <div class="shot" data-src="img/fig06.png" data-crop="380,0,1620,1201">
+          <span class="pin l" data-at="428,100">C</span>
+          <span class="pin l" data-at="710,144">A</span>
+          <span class="pin l" data-at="710,717">B</span>
+          <span class="hl b" data-r="695,1104,985,74"></span><span class="pin" data-at="697,1106">1</span>
+        </div></div>
+      <div class="legend" style="grid-template-columns:1fr;gap:1.4mm">
+        <div><span class="lk">A</span><span><b>Ficha:</b> estado, estándar, descripción, sede, servicio, acción, responsable y evidencia.</span></div>
+        <div><span class="lk">B</span><span><b>Paso por cada corte:</b> el estado que tuvo cada mes; avisa si no se reportó o cuántos meses lleva abierto.</span></div>
+        <div><span class="lk">C</span><span><b>Flecha:</b> regresa a la lista.</span></div>
+      </div>
+    </div>
+    <div>
+      <div class="frame"><div class="bar"><i></i><i></i><i></i><span class="url">Registrar seguimiento</span></div>
+        <div class="shot" data-src="img/fig07.png" data-crop="655,225,690,760">
+          <span class="pin" data-at="684,408">2</span>
+          <span class="pin" data-at="684,545">3</span>
+          <span class="pin" data-at="684,735">3</span>
+          <span class="hl" data-r="1049,382,110,52"></span>
+          <span class="pin" data-at="684,903">4</span>
+        </div></div>
+      <div class="cap"><b>Ventana</b> que se abre en el paso 1.</div>
+    </div>
+  </div>
+
+  <div class="sec">Pasos</div>
+  <ol class="steps">
+    <li><b class="v">En la ficha, pulse</b> <span class="btn"><svg class="i"><use href="#i-pen"/></svg> Registrar seguimiento</span> (botón azul de abajo).</li>
+    <li><b class="v">Elija el nuevo estado:</b> <span class="ui">Abierto</span> <span class="ui">Abierto con evidencia</span> <span class="ui">Cerrado</span></li>
+    <li><b class="v">Escriba o actualice</b> la acción propuesta y la evidencia.</li>
+    <li><b class="v">Pulse</b> <span class="btn">Guardar</span>.</li>
+  </ol>
+  <div class="note stop"><span class="ic"><svg class="i"><use href="#i-lock"/></svg></span><div><b class="t">Para cerrar, la evidencia es obligatoria</b>Si elige <span class="ui">Cerrado</span> <span style="color:#D9822B;font-weight:700">(recuadro naranja)</span> y deja vacía la evidencia, la aplicación no deja guardar.</div></div>
+  <div class="foot"><span><b>Auditoría SUH</b> · Guía de uso</span><span class="pnum"></span></div>
+</section>
+
+<!-- ========================= TAREA 7 · CORTE (1) ========================= -->
+<section class="page" id="t7">
+  <div class="task-top"><div class="task-num"><small>Tarea</small><span>7</span></div>
+    <div><div class="kicker">Corte · cada mes</div><h1>Hacer el corte del mes</h1></div></div>
+
+  <div class="flow" style="margin-bottom:4mm">
+    <div class="st"><div class="ico"><svg class="i"><use href="#i-cal"/></svg></div><b>① Abrir el mes</b>Una vez al inicio</div>
+    <div class="ar"><svg class="i"><use href="#i-arrow"/></svg></div>
+    <div class="st hot"><div class="ico" style="background:#fff"><svg class="i"><use href="#i-pen"/></svg></div><b>② Diligenciar</b>Con Excel (A) o en la app (B)</div>
+    <div class="ar"><svg class="i"><use href="#i-arrow"/></svg></div>
+    <div class="st"><div class="ico"><svg class="i"><use href="#i-lock"/></svg></div><b>③ Cerrar el mes</b>Las cifras se congelan</div>
+  </div>
+
+  <div class="cols" style="align-items:flex-start">
+    <div style="flex:1.25">
+      <div class="frame"><div class="bar"><i></i><i></i><i></i><span class="url">Auditoría SUH · Corte del mes</span></div>
+        <div class="shot" data-src="img/fig08.png" data-crop="380,0,1620,1201">
+          <span class="pin l" data-at="662,160">A</span>
+          <span class="pin l" data-at="662,366">B</span>
+          <span class="hl b" data-r="660,860,521,77"></span><span class="pin l" data-at="662,862">C</span>
+          <span class="hl b" data-r="1196,860,518,77"></span><span class="pin l" data-at="1712,862">D</span>
+          <span class="hl b" data-r="660,1077,1054,76"></span><span class="pin l" data-at="662,1079">E</span>
+        </div></div>
+    </div>
+    <div>
+      <h3>Qué muestra la pantalla</h3>
+      <div class="legend" style="grid-template-columns:1fr;gap:1.8mm;margin-top:1mm">
+        <div><span class="lk">A</span><span><b>El mes abierto:</b> reportados, sin reportar y vigentes, con barra de avance.</span></div>
+        <div><span class="lk">B</span><span><b>Por sede:</b> cuántos ya tienen seguimiento (p. ej. 1/36).</span></div>
+        <div><span class="lk">C</span><span><b>Descargar</b> la matriz de Excel.</span></div>
+        <div><span class="lk">D</span><span><b>Subir</b> la matriz diligenciada.</span></div>
+        <div><span class="lk">E</span><span><b>Editar hallazgos del mes</b> sin Excel.</span></div>
+      </div>
+      <p class="muted" style="font-size:8.6pt;margin-top:2.5mm">Más abajo, <b>Meses registrados</b> lista todos los cortes: <span class="chip c-amber">Abierto</span> admite cambios; <span class="chip c-gray">Cerrado</span> tiene cifras congeladas.</p>
+    </div>
+  </div>
+
+  <div class="sec">① Abrir el mes</div>
+  <div class="cols">
+    <ol class="steps compact">
+      <li><b class="v">Si no hay un mes abierto, pulse</b> <span class="btn">Abrir el mes</span> (o <span class="ui">Abrir mes</span> en el aviso).</li>
+      <li><b class="v">Confirme el periodo</b> en formato AAAA-MM. La aplicación sugiere el mes actual.</li>
+      <li><b class="v">Pulse</b> <span class="btn">Abrir</span>.</li>
+    </ol>
+    <div class="note tip" style="margin:0"><span class="ic"><svg class="i"><use href="#i-bulb"/></svg></span><div>Las opciones <b>A</b> y <b>B</b> de la página siguiente alimentan la misma información y <b>se pueden combinar</b>: suba la matriz y luego corrija un hallazgo puntual en la app.</div></div>
+  </div>
+  <div class="foot"><span><b>Auditoría SUH</b> · Guía de uso</span><span class="pnum"></span></div>
+</section>
+
+<!-- ========================= TAREA 7 · CORTE (2) ========================= -->
+<section class="page">
+  <div class="kicker" style="font-size:8pt;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--brand)">Tarea 7 · continuación</div>
+  <h1 style="margin:1mm 0 4mm;font-size:20pt">② Diligenciar el seguimiento</h1>
+
+  <div class="card" style="border:.5mm solid var(--brand);padding:4mm 5mm">
+    <div class="hd" style="font-size:12pt"><span class="ico" style="background:var(--brand);color:#fff">A</span> Con la matriz de Excel <span class="muted" style="font-weight:400;font-size:9pt;margin-left:auto">ideal para repartir al equipo</span></div>
+    <div class="flow" style="margin-top:3mm">
+      <div class="st"><div class="ico"><svg class="i"><use href="#i-down"/></svg></div><b>1. Descargar</b>Pulse <span class="ui">Descargar</span> <span class="lk" style="display:inline-flex;width:4.4mm;height:4.4mm;font-size:6.5pt;vertical-align:-.4mm">C</span><br><span class="muted" style="font-size:7.6pt">seguimiento-hallazgos-AAAA-MM.xlsx</span></div>
+      <div class="ar"><svg class="i"><use href="#i-arrow"/></svg></div>
+      <div class="st"><div class="ico"><svg class="i"><use href="#i-file"/></svg></div><b>2. Diligenciar</b>El equipo actualiza estado, acción, responsable y evidencia</div>
+      <div class="ar"><svg class="i"><use href="#i-arrow"/></svg></div>
+      <div class="st"><div class="ico"><svg class="i"><use href="#i-up"/></svg></div><b>3. Subir</b>Pulse <span class="btn">Subir</span> <span class="lk" style="display:inline-flex;width:4.4mm;height:4.4mm;font-size:6.5pt;vertical-align:-.4mm">D</span> y elija el archivo</div>
+      <div class="ar"><svg class="i"><use href="#i-arrow"/></svg></div>
+      <div class="st"><div class="ico"><svg class="i"><use href="#i-check"/></svg></div><b>4. Revisar</b>Lea «Matriz procesada» y pulse <span class="ui">Entendido</span></div>
+    </div>
+    <div class="cards c3" style="margin-top:3mm">
+      <div class="card" style="background:var(--paper)"><b>Orden libre.</b> Cada fila lleva un identificador: el regreso es exacto aunque cambie el orden.</div>
+      <div class="card" style="background:var(--paper)"><b>Nunca cierra por omisión.</b> Si un hallazgo no viene en el archivo, conserva su estado.</div>
+      <div class="card" style="background:var(--paper)"><b>Conflictos.</b> Si se cambió en la app y en el Excel a la vez, gana la app y se marca.</div>
+    </div>
+  </div>
+
+  <div class="card" style="border:.5mm solid var(--brand);padding:4mm 5mm;margin-top:5mm">
+    <div class="hd" style="font-size:12pt"><span class="ico" style="background:var(--brand);color:#fff">B</span> Directamente en la aplicación <span class="muted" style="font-weight:400;font-size:9pt;margin-left:auto">ideal para cambios puntuales</span></div>
+    <div class="cols" style="margin-top:3mm;align-items:flex-start">
+      <div style="flex:1.3">
+        <div class="frame"><div class="bar"><i></i><i></i><i></i><span class="url">Hallazgos del corte</span></div>
+          <div class="shot" data-src="img/fig09.png" data-crop="380,0,1620,1201">
+            <span class="pin" data-at="1958,392">2</span>
+            <span class="pin" data-at="688,381">3</span>
+            <span class="pin" data-at="697,982">4</span>
+            <span class="hl" data-r="1914,24,48,46"></span><span class="pin l" data-at="1870,47">+</span>
+          </div></div>
+      </div>
+      <div>
+        <ol class="steps compact">
+          <li><b class="v">Pulse</b> <span class="ui"><svg class="i"><use href="#i-pen"/></svg> Editar hallazgos del mes</span> <span class="lk" style="display:inline-flex;width:4.4mm;height:4.4mm;font-size:6.5pt;vertical-align:-.4mm">E</span>. Tiene la misma búsqueda y filtros de Hallazgos.</li>
+          <li><b class="v">Pulse el lápiz</b> del hallazgo que quiere actualizar.</li>
+          <li><b class="v">Elija el estado</b> y complete acción, responsable y evidencia.</li>
+          <li><b class="v">Pulse</b> <span class="btn">Guardar</span>.</li>
+        </ol>
+        <div class="note tip" style="margin-top:1mm"><span class="ic"><svg class="i"><use href="#i-plus"/></svg></span><div>El <b>+</b> de arriba a la derecha <b>agrega un hallazgo</b> sin subir archivos: elija sede y estándar, describa el incumplimiento y complete los datos.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note stop" style="margin-top:4mm"><span class="ic"><svg class="i"><use href="#i-lock"/></svg></span><div><b class="t">En ambas opciones</b>Para marcar un hallazgo como <b>Cerrado</b>, la evidencia es obligatoria.</div></div>
+  <div class="foot"><span><b>Auditoría SUH</b> · Guía de uso</span><span class="pnum"></span></div>
+</section>
+
+<!-- ========================= TAREA 7 · CORTE (3) + RUTINA ========================= -->
+<section class="page" id="rutina">
+  <div class="kicker" style="font-size:8pt;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--brand)">Tarea 7 · continuación</div>
+  <h1 style="margin:1mm 0 4mm;font-size:20pt">③ Cerrar el mes</h1>
+  <div class="cols" style="align-items:center">
+    <ol class="steps">
+      <li><b class="v">Cuando el seguimiento esté completo, pulse</b> <span class="btn">Cerrar el mes</span> al final de la sección del mes abierto.</li>
+      <li><b class="v">Confirme</b> en la ventana. El estado de cada hallazgo queda <b>congelado</b> y el consolidado de ese mes ya no cambia.</li>
+    </ol>
+    <div class="note warn" style="margin:0"><span class="ic"><svg class="i"><use href="#i-bang"/></svg></span><div><b class="t">Antes de cerrar, piénselo</b>Un corte cerrado se puede consultar pero <b>no editar</b>. Reabrirlo exige registrar un motivo, y la versión web actual no tiene un botón para hacerlo.</div></div>
+  </div>
+
+  <div style="margin-top:8mm;background:var(--paper);border:1px solid var(--line);border-radius:4mm;padding:6mm 7mm">
+    <div style="display:flex;align-items:center;gap:3mm;margin-bottom:2mm"><span class="ico" style="width:10mm;height:10mm;border-radius:3mm;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14pt"><svg class="i"><use href="#i-refresh"/></svg></span>
+      <div><h2 style="margin:0">Su rutina de cada mes</h2><div class="muted" style="font-size:9pt">Imprima esta página y márquela a medida que avanza.</div></div></div>
+    <ul class="check">
+      <li><span class="bx"></span><div><b>Abrir el corte del mes</b><small>Corte › Abrir el mes › confirmar AAAA-MM › Abrir</small></div></li>
+      <li><span class="bx"></span><div><b>Descargar la matriz y repartirla al equipo</b><small>Corte › Descargar · archivo seguimiento-hallazgos-AAAA-MM.xlsx</small></div></li>
+      <li><span class="bx"></span><div><b>Recibir y subir la matriz diligenciada</b><small>Corte › Subir · revisar la ventana «Matriz procesada»</small></div></li>
+      <li><span class="bx"></span><div><b>Corregir hallazgos puntuales en la app</b><small>Corte › Editar hallazgos del mes · lápiz · Guardar</small></div></li>
+      <li><span class="bx"></span><div><b>Revisar que cada sede tenga su seguimiento</b><small>Corte › «Por sede» (ej. 36/36) · sin hallazgos «No se reportó»</small></div></li>
+      <li><span class="bx"></span><div><b>Cerrar el mes</b><small>Corte › Cerrar el mes › confirmar</small></div></li>
+      <li><span class="bx"></span><div><b>Exportar el consolidado para el informe</b><small>Consolidado › botón Excel</small></div></li>
+    </ul>
+    <div class="note tip" style="margin-bottom:0"><span class="ic"><svg class="i"><use href="#i-up"/></svg></span><div><b class="t">Solo cuando llegue una autoevaluación nueva</b>Cárguela (Tarea 3) y confirme el cruce (Tarea 4). No depende del ciclo mensual.</div></div>
+  </div>
+  <div class="foot"><span><b>Auditoría SUH</b> · Guía de uso</span><span class="pnum"></span></div>
+</section>
+
+<!-- ========================= TAREA 8 · CONSOLIDADO ========================= -->
+<section class="page" id="t8">
+  <div class="task-top"><div class="task-num"><small>Tarea</small><span>8</span></div>
+    <div><div class="kicker">Consolidado</div><h1>Ver el consolidado</h1></div></div>
+  <div class="goal">
+    <div class="box"><div class="lbl"><svg class="i"><use href="#i-target"/></svg>Para qué</div>Ver el resumen del corte en tres vistas y generar el Excel para el informe.</div>
+    <div class="box"><div class="lbl"><svg class="i"><use href="#i-pin"/></svg>Dónde</div><span class="where"><svg class="i"><use href="#i-table"/></svg> Menú <span class="sep">›</span> Consolidado</span></div>
+  </div>
+
+  <div class="frame"><div class="bar"><i></i><i></i><i></i><span class="url">Auditoría SUH · Consolidado</span></div>
+    <div class="shot" data-src="img/fig10.png" data-crop="380,0,1620,820">
+      <span class="hl b" data-r="410,100,455,57"></span><span class="pin l" data-at="880,127">A</span>
+      <span class="pin l" data-at="400,187">B</span>
+      <span class="hl" data-r="1914,24,48,46"></span><span class="pin l" data-at="1870,47">D</span>
+    </div></div>
+  <div class="legend">
+    <div><span class="lk">A</span><span><b>Pestañas</b> para cambiar de vista (abajo).</span></div>
+    <div><span class="lk">B</span><span><b>Franja del corte:</b> mes y total. <span style="color:var(--amber);font-weight:600">Amarilla</span> = corte abierto, las cifras pueden cambiar.</span></div>
+    <div><span class="lk">C</span><span><b>Botón Excel</b> flotante, abajo a la derecha (página siguiente).</span></div>
+    <div><span class="lk">D</span><span><b>Gráfica:</b> abre la serie mensual.</span></div>
+  </div>
+
+  <div class="sec">Las tres vistas</div>
+  <div class="cards c3">
+    <div class="card" style="padding:2.5mm">
+      <div class="frame" style="box-shadow:none"><div class="shot" data-src="img/fig10.png" data-crop="560,240,1260,420"></div></div>
+      <h3 style="margin-top:2.5mm">Por sede</h3>Una tarjeta por sede: total, barra de estados, avance (% cerrado), % con gestión y antigüedad del más antiguo.</div>
+    <div class="card" style="padding:2.5mm">
+      <div class="frame" style="box-shadow:none"><div class="shot" data-src="img/fig11.png" data-crop="560,240,1260,420"></div></div>
+      <h3 style="margin-top:2.5mm">Por estándar</h3>Barras con número y % de hallazgos de cada estándar y, debajo, el detalle de estados de cada uno.</div>
+    <div class="card" style="padding:2.5mm">
+      <div class="frame" style="box-shadow:none"><div class="shot" data-src="img/fig12.png" data-crop="560,240,1260,420"></div></div>
+      <h3 style="margin-top:2.5mm">Sede × estándar</h3>Tabla cruzada con totales. En <b style="color:var(--brand)">azul</b>, el estándar donde cada sede concentra más hallazgos.</div>
+  </div>
+  <p class="muted" style="font-size:8.6pt;margin-top:2.5mm">En la tabla, pase el cursor por un encabezado abreviado (Infra., Medicam.…) para ver el nombre completo del estándar.</p>
+  <div class="foot"><span><b>Auditoría SUH</b> · Guía de uso</span><span class="pnum"></span></div>
+</section>
+
+<!-- ========================= TAREA 8 · EXCEL + SERIE ========================= -->
+<section class="page">
+  <div class="kicker" style="font-size:8pt;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--brand)">Tarea 8 · continuación</div>
+  <h1 style="margin:1mm 0 4mm;font-size:20pt">Exportar a Excel y ver la evolución</h1>
+
+  <div class="cols" style="align-items:flex-start">
+    <div style="flex:1.2">
+      <div class="frame"><div class="bar"><i></i><i></i><i></i><span class="url">Consolidado · Sede × estándar</span></div>
+        <div class="shot" data-src="img/fig12.png" data-crop="560,240,1440,961">
+          <span class="hl" data-r="1826,1094,146,72"></span><span class="pin" data-at="1810,1094">1</span>
+        </div></div>
+    </div>
+    <div>
+      <h3 style="display:flex;gap:2mm;align-items:center"><svg class="i" style="color:var(--green);font-size:14pt"><use href="#i-down"/></svg> Descargar el Excel</h3>
+      <ol class="steps">
+        <li><b class="v">Pulse el botón flotante</b> <span class="btn"><svg class="i"><use href="#i-down"/></svg> Excel</span> de la esquina inferior derecha.</li>
+        <li><b class="v">Espere</b> mientras dice «Generando…». El archivo del periodo se descarga y un mensaje confirma su tamaño.</li>
+      </ol>
+      <div class="note tip"><span class="ic"><svg class="i"><use href="#i-bulb"/></svg></span><div>Exporte <b>después de cerrar el mes</b> para que el informe tenga las cifras definitivas.</div></div>
+    </div>
+  </div>
+
+  <div class="sec">Serie mensual</div>
+  <div class="cols" style="align-items:flex-start">
+    <div>
+      <ol class="steps">
+        <li><b class="v">En el Consolidado, pulse el ícono de gráfica</b> <svg class="i" style="color:var(--brand)"><use href="#i-chart"/></svg> de arriba a la derecha.</li>
+        <li><b class="v">Avance acumulado:</b> la línea muestra el % de hallazgos cerrados en cada corte.</li>
+        <li><b class="v">Mes a mes:</b> cada corte con su avance, barra de estados, total y cerrados, y la variación frente al mes anterior: <b style="color:var(--green)">verde si sube</b>, <b style="color:var(--red)">rojo si baja</b>.</li>
+      </ol>
+      <div class="note warn"><span class="ic"><svg class="i"><use href="#i-bang"/></svg></span><div>La serie aparece cuando hay <b>al menos dos cortes</b>. Con uno solo no hay evolución que mostrar.</div></div>
+    </div>
+    <div style="flex:1.2">
+      <div class="frame"><div class="bar"><i></i><i></i><i></i><span class="url">Serie mensual</span></div>
+        <div class="shot" data-src="img/fig13.png" data-crop="640,110,1090,810">
+          <span class="pin" data-at="672,200">2</span>
+          <span class="pin" data-at="672,690">3</span>
+          <span class="hl" data-r="878,738,118,28"></span>
+        </div></div>
+    </div>
+  </div>
+  <div class="foot"><span><b>Auditoría SUH</b> · Guía de uso</span><span class="pnum"></span></div>
+</section>
+
+<!-- ========================= FLUJO + FAQ ========================= -->
+<section class="page" id="faq">
+  <div class="kicker" style="font-size:8pt;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--brand)">El panorama completo</div>
+  <h1 style="margin:1mm 0 4mm;font-size:20pt">Cómo encaja todo</h1>
+  <div class="lanes">
+    <div class="lane" style="background:var(--paper);border:1px dashed #c9c8c2">
+      <div class="lt" style="color:var(--muted)"><span>Carga ocasional</span><span style="letter-spacing:0;text-transform:none;font-weight:600">solo cuando una sede entrega una autoevaluación nueva</span></div>
+      <div class="flow" style="max-width:110mm">
+        <div class="st"><div class="ico"><svg class="i"><use href="#i-up"/></svg></div><b>Cargar auditoría</b>Excel SUH por sede · Tarea 3</div>
+        <div class="ar"><svg class="i"><use href="#i-arrow"/></svg></div>
+        <div class="st"><div class="ico"><svg class="i"><use href="#i-merge"/></svg></div><b>Confirmar el cruce</b>Decidir y publicar · Tarea 4</div>
+      </div>
+    </div>
+    <div class="lane" style="background:var(--brand-soft)">
+      <div class="lt" style="color:var(--brand)"><span>Ciclo mensual</span><span style="letter-spacing:0;text-transform:none;font-weight:600">se repite cada mes · Tareas 7 y 8</span></div>
+      <div class="flow">
+        <div class="st"><div class="ico"><svg class="i"><use href="#i-cal"/></svg></div><b>Abrir el mes</b>Pantalla Corte</div>
+        <div class="ar"><svg class="i"><use href="#i-arrow"/></svg></div>
+        <div class="st hot" style="background:#fff"><div class="ico"><svg class="i"><use href="#i-pen"/></svg></div><b>Diligenciar</b>Matriz Excel o app</div>
+        <div class="ar"><svg class="i"><use href="#i-arrow"/></svg></div>
+        <div class="st"><div class="ico"><svg class="i"><use href="#i-lock"/></svg></div><b>Cerrar el mes</b>Cifras congeladas</div>
+        <div class="ar"><svg class="i"><use href="#i-arrow"/></svg></div>
+        <div class="st"><div class="ico"><svg class="i"><use href="#i-table"/></svg></div><b>Consolidado</b>Revisar y exportar</div>
+      </div>
+      <div class="loop"><svg class="i"><use href="#i-refresh"/></svg> y vuelve a empezar el mes siguiente</div>
+    </div>
+  </div>
+
+  <h2 style="margin-top:4mm">Si algo no sale como espera</h2>
+  <div class="faq">
+    <div class="q"><h3><svg class="i"><use href="#i-q"/></svg>No puedo cerrar un hallazgo.</h3><p>Cerrar exige escribir la evidencia (acta, contrato, registro fotográfico…). Sin ella, <b>Guardar</b> muestra un aviso y no guarda.</p></div>
+    <div class="q"><h3><svg class="i"><use href="#i-q"/></svg>Subí dos veces la misma sede.</h3><p>Queda como una versión nueva y se vuelve a cruzar. Si fue un error, elimínela en <b>Archivos cargados</b> con la papelera.</p></div>
+    <div class="q"><h3><svg class="i"><use href="#i-q"/></svg>Dice «No se reportó en este corte». ¿Está cerrado?</h3><p>No. Ese mes nadie actualizó su seguimiento y conserva su último estado. <b>Nunca se cierra por omisión.</b></p></div>
+    <div class="q"><h3><svg class="i"><use href="#i-q"/></svg>Las cifras de Inicio o del Consolidado cambian.</h3><p>Mientras el corte está abierto, cada cambio se refleja de inmediato. Al cerrar el mes, quedan fijas.</p></div>
+    <div class="q"><h3><svg class="i"><use href="#i-q"/></svg>No reconoce la sede de un archivo.</h3><p>Pulse <b>Elegir sede</b> junto al error para indicarla o registrar una nueva; la carga se reintenta sola.</p></div>
+    <div class="q"><h3><svg class="i"><use href="#i-q"/></svg>No veo la serie mensual.</h3><p>Necesita al menos <b>dos cortes</b> registrados para mostrar la evolución.</p></div>
+  </div>
+  <div class="foot"><span><b>Auditoría SUH</b> · Guía de uso</span><span class="pnum"></span></div>
+</section>
+
+<script>
+// Recorta cada captura y ubica pines/recuadros usando coordenadas de la imagen original (2000×1201).
+const IW = 2000, IH = 1201;
+document.querySelectorAll('.shot').forEach(s => {
+  const [cx, cy, cw, ch] = s.dataset.crop.split(',').map(Number);
+  s.style.aspectRatio = cw + ' / ' + ch;
+  const img = document.createElement('img');
+  img.src = s.dataset.src;
+  img.style.width = (IW / cw * 100) + '%';
+  img.style.left = (-cx / cw * 100) + '%';
+  img.style.top = (-cy / ch * 100) + '%';
+  s.prepend(img);
+  s.querySelectorAll('[data-at]').forEach(p => {
+    const [x, y] = p.dataset.at.split(',').map(Number);
+    p.style.left = ((x - cx) / cw * 100) + '%';
+    p.style.top = ((y - cy) / ch * 100) + '%';
+  });
+  s.querySelectorAll('[data-r]').forEach(r => {
+    const [x, y, w, h] = r.dataset.r.split(',').map(Number);
+    Object.assign(r.style, { left: ((x - cx) / cw * 100) + '%', top: ((y - cy) / ch * 100) + '%',
+      width: (w / cw * 100) + '%', height: (h / ch * 100) + '%' });
+  });
+});
+// Numeración de páginas y referencias del índice.
+const pages = [...document.querySelectorAll('.page')];
+pages.forEach((p, i) => { const n = p.querySelector('.pnum'); if (n) n.textContent = i + 1; });
+const pageOf = id => pages.indexOf(document.getElementById(id)) + 1;
+document.querySelectorAll('[data-ref]').forEach(e => e.textContent = 'pág. ' + pageOf(e.dataset.ref));
+document.querySelectorAll('[data-ref-text]').forEach(e => e.textContent = '→ pág. ' + pageOf(e.dataset.refText));
+// Vista previa de una sola página: manual.html?p=3
+const only = new URLSearchParams(location.search).get('p');
+if (only) pages.forEach((p, i) => { if (i + 1 != only) p.style.display = 'none'; });
+</script>
+</body>
+</html>
