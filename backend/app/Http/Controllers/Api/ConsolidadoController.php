@@ -81,10 +81,15 @@ class ConsolidadoController extends Controller
         return response()->download($ruta, $nombre)->deleteFileAfterSend();
     }
 
-    /** Por omisión, el último corte cerrado: las cifras firmes. */
+    /**
+     * Por omisión, el mes en curso: es donde caen los cambios que se hacen
+     * desde la app, así que el tablero los refleja al instante (la pantalla
+     * avisa que es un corte abierto). Sin mes abierto, el último cerrado.
+     */
     private function periodoPorOmision(): ?string
     {
-        return Corte::ultimoCerrado()?->periodo
+        return Corte::abierto()?->periodo
+            ?? Corte::ultimoCerrado()?->periodo
             ?? Corte::query()->orderByDesc('periodo')->value('periodo');
     }
 }

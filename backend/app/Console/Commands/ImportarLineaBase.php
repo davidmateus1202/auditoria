@@ -48,6 +48,10 @@ class ImportarLineaBase extends Command
             $this->components->warn("La hoja «{$hoja}» no corresponde a ninguna sede registrada y se omitió.");
         }
 
+        foreach ($resumen['meses_actualizados'] as $mes) {
+            $this->components->info("El corte abierto {$mes} se actualizó con esta línea base (solo lo no reportado).");
+        }
+
         $this->newLine();
         $this->line('  <fg=gray>El corte queda ABIERTO: se puede volver a importar hasta darlo por bueno.</>');
         $this->line('  <fg=gray>Revisar sede por sede antes de cerrarlo — los errores de aquí se</>');

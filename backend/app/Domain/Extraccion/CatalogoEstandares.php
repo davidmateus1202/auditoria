@@ -106,6 +106,34 @@ final class CatalogoEstandares
         return self::ALIAS[$sinOrdinal] ?? null;
     }
 
+    /**
+     * El estándar del catálogo más parecido a un texto no reconocido, para
+     * proponerlo en pantalla. Compara contra todos los alias, no solo contra
+     * el nombre: «Interdep. de serv.» se parece más a un alias que al nombre.
+     *
+     * @return array{codigo: string, nombre: string, puntaje: float}|null
+     */
+    public static function sugerir(?string $texto): ?array
+    {
+        $candidatos = [];
+
+        foreach (self::ESTANDARES as $codigo => [$nombre]) {
+            $candidatos[$nombre] = $codigo;
+        }
+
+        foreach (self::ALIAS as $alias => $codigo) {
+            $candidatos[$alias] = $codigo;
+        }
+
+        $mejor = SugeridorNombres::sugerir($texto, $candidatos);
+
+        return $mejor === null ? null : [
+            'codigo' => $mejor['valor'],
+            'nombre' => self::nombre($mejor['valor']),
+            'puntaje' => round($mejor['puntaje'], 2),
+        ];
+    }
+
     /** ¿Es un rótulo conocido que debe ignorarse en vez de rechazarse? */
     public static function estaFueraDeAlcance(?string $texto): bool
     {

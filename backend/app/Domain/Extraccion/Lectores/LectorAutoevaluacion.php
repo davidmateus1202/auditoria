@@ -47,8 +47,23 @@ final class LectorAutoevaluacion
     /** Cierran el bloque de hallazgos de la hoja INFORME. */
     private const FIN_DE_HALLAZGOS = ['FORTALEZAS', 'OPORTUNIDADES DE MEJORA', 'CONCLUSIONES'];
 
-    public function leer(string $ruta): ResultadoExtraccion
+    /**
+     * Valores que la persona corrigió en la vista previa, por «HOJA!A12» (hoja
+     * en forma canónica). Se aplican al leer: el archivo original no se toca.
+     *
+     * @var array<string, string>
+     */
+    private array $correcciones = [];
+
+    /** @var list<array{tipo:string, hoja:string, celda:string, fila:int, encontrado:string, sugerencia:?string}> */
+    private array $problemas = [];
+
+    /** @param array<string, string> $correcciones */
+    public function leer(string $ruta, array $correcciones = []): ResultadoExtraccion
     {
+        $this->correcciones = $correcciones;
+        $this->problemas = [];
+
         $reader = IOFactory::createReaderForFile($ruta);
         $reader->setReadDataOnly(true);
 
@@ -73,6 +88,7 @@ final class LectorAutoevaluacion
             fechaAuditoria: $meta['fecha'],
             normativaDeclarada: $this->normativaDeclarada($libro->getAllSheets()),
         );
+        $resultado->celdaSede = $meta['celda_sede'];
 
         // La etiqueta normativa del archivo no se usa para nada operativo: la
         // plantilla todavía dice "RES 2003 DE 2014" en varias hojas mientras la
@@ -97,6 +113,12 @@ final class LectorAutoevaluacion
         }
 
         $libro->disconnectWorksheets();
+
+        // Se rechaza al final, con todas las celdas a la vista, para que se
+        // puedan corregir de una sola vez.
+        if ($this->problemas !== []) {
+            throw EstructuraInvalida::celdasNoReconocidas($this->problemas);
+        }
 
         return $resultado;
     }
@@ -130,7 +152,7 @@ final class LectorAutoevaluacion
     /**
      * Cabecera de la hoja INFORME: Centro de Salud, Fecha, Responsable, Auditor.
      *
-     * @return array{sede:?string,fecha:?string,responsable:?string,auditor:?string}
+     * @return array{sede:?string,fecha:?string,responsable:?string,auditor:?string,celda_sede:?string}
      */
     private function leerMetadatos(Worksheet $informe): array
     {
@@ -142,7 +164,7 @@ final class LectorAutoevaluacion
             'AUDITOR ES' => 'auditor',
         ];
 
-        $meta = ['sede' => null, 'fecha' => null, 'responsable' => null, 'auditor' => null];
+        $meta = ['sede' => null, 'fecha' => null, 'responsable' => null, 'auditor' => null, 'celda_sede' => null];
         $limite = min(12, $informe->getHighestDataRow());
 
         for ($fila = 1; $fila <= $limite; $fila++) {
@@ -157,6 +179,10 @@ final class LectorAutoevaluacion
 
             if ($valor !== '') {
                 $meta[$campo] = $valor;
+
+                if ($campo === 'sede') {
+                    $meta['celda_sede'] = "B{$fila}";
+                }
             }
         }
 
@@ -211,7 +237,10 @@ final class LectorAutoevaluacion
                         continue;
                     }
 
-                    throw EstructuraInvalida::estandarDesconocido($nombreHoja, $fila, $textoEstandar);
+                    $this->noReconocido($nombreHoja, $fila, $textoEstandar);
+                    $estandar = null;
+
+                    continue;
                 }
 
                 $estandar = $codigo;
@@ -297,7 +326,10 @@ final class LectorAutoevaluacion
                         continue;
                     }
 
-                    throw EstructuraInvalida::estandarDesconocido($nombreHoja, $fila, $textoEstandar);
+                    $this->noReconocido($nombreHoja, $fila, $textoEstandar);
+                    $estandar = null;
+
+                    continue;
                 }
 
                 $estandar = $codigo;
@@ -390,8 +422,27 @@ final class LectorAutoevaluacion
         return null;
     }
 
+    /** Anota la celda con su sugerencia; el archivo se rechaza al terminar de leerlo. */
+    private function noReconocido(string $hoja, int $fila, string $texto): void
+    {
+        $this->problemas[] = [
+            'tipo' => 'estandar',
+            'hoja' => $hoja,
+            'celda' => "A{$fila}",
+            'fila' => $fila,
+            'encontrado' => $texto,
+            'sugerencia' => CatalogoEstandares::sugerir($texto)['nombre'] ?? null,
+        ];
+    }
+
     private function celda(Worksheet $hoja, string $columna, int $fila): string
     {
+        $clave = TextoNormalizador::canonica($hoja->getTitle()).'!'.$columna.$fila;
+
+        if (array_key_exists($clave, $this->correcciones)) {
+            return $this->correcciones[$clave];
+        }
+
         $celda = $hoja->getCell($columna.$fila);
         // Algunas plantillas traen el nombre de la sede como fórmula que
         // referencia una hoja oculta (p. ej. ='Todos '!B4:F4); getValue()

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Domain\Enums\DestinoReconciliacion;
+use App\Domain\Enums\EstadoHallazgo;
 use App\Http\Controllers\Controller;
 use App\Models\Corte;
 use App\Models\HallazgoEstadoCorte;
@@ -13,6 +14,7 @@ use App\Services\Cortes\ExportadorMatriz;
 use App\Services\Cortes\ImportadorMatriz;
 use App\Services\Cortes\ServicioCorte;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Arr;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -44,6 +46,59 @@ class CorteController extends Controller
     public function show(string $periodo): JsonResponse
     {
         return response()->json($this->servicio->estado($periodo));
+    }
+
+    /**
+     * El detalle hallazgo por hallazgo del corte, para editarlo a mano desde
+     * la pantalla sin pasar por el Excel. Es la misma foto que alimenta el
+     * consolidado, así que un cambio aquí sí se refleja en él —a diferencia
+     * de PUT /hallazgos/{id}/estado, que solo toca el estado «en vivo».
+     */
+    public function hallazgos(Request $peticion, string $periodo): JsonResponse
+    {
+        $datos = $peticion->validate([
+            'sede_id' => ['sometimes', 'integer', 'exists:sedes,id'],
+            'estandar' => ['sometimes', 'string', 'exists:estandares,codigo'],
+            'estado' => ['sometimes', 'string', 'in:abierto,abierto_evidencia,cerrado,sin_dato'],
+            'buscar' => ['sometimes', 'string', 'max:200'],
+            'por_pagina' => ['sometimes', 'integer', 'min:1', 'max:200'],
+        ]);
+
+        $corte = Corte::query()->where('periodo', $periodo)->firstOrFail();
+
+        $pagina = HallazgoEstadoCorte::query()
+            ->where('hallazgo_estado_corte.corte_id', $corte->id)
+            ->whereHas('hallazgo', function ($consulta) use ($datos) {
+                $consulta
+                    ->when(isset($datos['sede_id']), fn ($q) => $q->where('sede_id', $datos['sede_id']))
+                    ->when(isset($datos['estandar']), fn ($q) => $q->where('estandar_codigo', $datos['estandar']))
+                    ->when(
+                        isset($datos['buscar']),
+                        fn ($q) => $q->where('descripcion', 'like', '%'.$datos['buscar'].'%')
+                    );
+            })
+            ->when(isset($datos['estado']), fn ($q) => $q->where('hallazgo_estado_corte.estado', $datos['estado']))
+            ->with(['hallazgo.sede:id,codigo,nombre', 'hallazgo.estandar:codigo,nombre'])
+            ->join('hallazgos', 'hallazgos.id', '=', 'hallazgo_estado_corte.hallazgo_id')
+            ->orderBy('hallazgos.sede_id')
+            ->orderBy('hallazgos.estandar_codigo')
+            ->select('hallazgo_estado_corte.*')
+            ->paginate($datos['por_pagina'] ?? 50);
+
+        $pagina->through(fn (HallazgoEstadoCorte $foto) => [
+            'hallazgo_id' => $foto->hallazgo_id,
+            'descripcion' => $foto->hallazgo->descripcion,
+            'sede' => $foto->hallazgo->sede,
+            'estandar' => $foto->hallazgo->estandar,
+            'estado' => $foto->estado->value,
+            'presente_en_corte' => $foto->presente_en_corte,
+            'meses_abierto' => $foto->meses_abierto,
+            'accion_propuesta' => $foto->accion_propuesta,
+            'responsable' => $foto->responsable,
+            'evidencia' => $foto->evidencia,
+        ]);
+
+        return response()->json($pagina);
     }
 
     /** Descarga la matriz del mes en el formato de siempre. */
@@ -112,7 +167,18 @@ class CorteController extends Controller
             ->where('hallazgo_id', $hallazgoId)
             ->firstOrFail();
 
-        $foto->update([...$datos, 'presente_en_corte' => true]);
+        if (Corte::abierto()?->is($corte)) {
+            // El mes en curso: el hallazgo (lista, detalle) y la foto
+            // (tablero, consolidado) cambian juntos para que no se contradigan.
+            $this->servicio->registrarCambio(
+                $foto->hallazgo,
+                EstadoHallazgo::from($datos['estado']),
+                Arr::only($datos, ['accion_propuesta', 'responsable', 'evidencia']),
+                $peticion->user(),
+            );
+        } else {
+            $foto->update([...$datos, 'presente_en_corte' => true]);
+        }
 
         return response()->json(['datos' => $foto->fresh()]);
     }

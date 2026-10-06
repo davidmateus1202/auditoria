@@ -204,28 +204,23 @@ final class AplicadorReconciliacion
             return;
         }
 
-        if ($evidencia === '') {
-            throw new RuntimeException(
-                'Cerrar un hallazgo exige registrar con qué evidencia se cerró. '.
-                'Sin constancia, el consolidado no se puede defender.'
-            );
-        }
-
         $anterior = $hallazgo->estado;
 
-        $hallazgo->update([
-            'estado' => EstadoHallazgo::Cerrado,
-            'evidencia' => $evidencia,
-            'cerrado_en' => now()->toDateString(),
-            'cerrado_por' => $usuario?->id,
-        ]);
+        // La evidencia es opcional: sin ella se conserva la que ya tenía. El
+        // cambio va también a la foto del corte abierto, de donde sale el tablero.
+        $this->cortes->registrarCambio(
+            $hallazgo,
+            EstadoHallazgo::Cerrado,
+            $evidencia === '' ? [] : ['evidencia' => $evidencia],
+            $usuario,
+        );
 
         Seguimiento::create([
             'hallazgo_id' => $hallazgo->id,
             'usuario_id' => $usuario?->id,
             'estado_anterior' => $anterior,
             'estado_nuevo' => EstadoHallazgo::Cerrado,
-            'evidencia' => $evidencia,
+            'evidencia' => $evidencia === '' ? null : $evidencia,
             'motivo' => 'El hallazgo ya no aparece en la auditoría nueva.',
         ]);
 
@@ -253,11 +248,7 @@ final class AplicadorReconciliacion
 
         $anterior = $hallazgo->estado;
 
-        $hallazgo->update([
-            'estado' => EstadoHallazgo::Abierto,
-            'cerrado_en' => null,
-            'cerrado_por' => null,
-        ]);
+        $this->cortes->registrarCambio($hallazgo, EstadoHallazgo::Abierto, [], $usuario);
         $hallazgo->increment('veces_reportado');
 
         Seguimiento::create([

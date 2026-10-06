@@ -1,0 +1,61 @@
+@import 'tailwindcss';
+
+/*
+ * Paleta del expediente técnico: papel gris verdoso, tinta de sello para lo
+ * interactivo, y el semáforo reservado para el estado del hallazgo.
+ *
+ * El acento (sello) nunca se usa para señalar gravedad: si compitiera con el
+ * rojo/ámbar/verde del estado, el estado dejaría de leerse de un vistazo, que
+ * es justo lo que esta aplicación tiene que resolver. Calcado 1:1 de
+ * app/lib/nucleo/tema.dart.
+ */
+@theme {
+  --color-papel: #ededea;
+  --color-superficie: #f7f8f5;
+  --color-superficie-2: #e3e5df;
+  --color-hundido: #e7e9e3;
+  --color-tinta: #181b18;
+  --color-tinta-2: #3d423e;
+  --color-apagado: #767f78;
+  --color-regla: #cdd1ca;
+  --color-sello: #2e3d8f;
+  --color-sello-suave: #dfe3f3;
+  --color-critico: #a32e22;
+  --color-critico-fondo: #f2dfdb;
+  --color-alerta: #8a6410;
+  --color-alerta-fondo: #f0e6ce;
+  --color-bien: #2a6a4e;
+  --color-bien-fondo: #dbe9e0;
+  --color-sin-dato: #7e867f;
+  --color-sin-dato-fondo: #e2e4df;
+
+  --font-sans:
+    'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+html {
+  font-family: var(--font-sans);
+}
+
+body {
+  background-color: var(--color-papel);
+  color: var(--color-tinta);
+}
+
+/* Cifras y tablas necesitan dígitos de ancho fijo para alinear en columna. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Scrollbar discreto, acorde al lenguaje visual de "documento". */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-regla);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-track {
+  background-color: transparent;
+}

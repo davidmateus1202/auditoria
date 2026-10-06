@@ -150,7 +150,23 @@ class ConsolidadoTest extends TestCase
 
         // El de marzo sigue dando lo mismo: por eso se puede auditar hacia atrás.
         $this->assertSame($marzo, $this->servicio->generar('2026-03')->generales);
-        $this->assertSame(190, $this->servicio->generar('2026-04')->generales['cerrados']);
+        // Abril acumula: los 33 que ya venían cerrados más los 190 de abril.
+        $this->assertSame(223, $this->servicio->generar('2026-04')->generales['cerrados']);
+    }
+
+    #[Test]
+    public function un_mes_nuevo_conserva_el_avance_acumulado(): void
+    {
+        (new ServicioCorte())->abrir('2026-04');
+
+        $abril = $this->servicio->generar('2026-04')->generales;
+
+        // Sin cierres en abril, el avance no vuelve a 0 %: sigue en 14,8 %.
+        $this->assertSame(223, $abril['hallazgos']);
+        $this->assertSame(33, $abril['cerrados']);
+        $this->assertEqualsWithDelta(0.148, $abril['pct_avance'], 0.001);
+        // Los cerrados no cuentan como pendientes de reportar.
+        $this->assertSame(190, $abril['sin_reportar']);
     }
 
     #[Test]
@@ -165,8 +181,9 @@ class ConsolidadoTest extends TestCase
         $this->assertCount(2, $serie);
         $this->assertSame('2026-03', $serie[0]['periodo']);
         $this->assertSame(223, $serie[0]['hallazgos']);
-        // En abril solo viajan los vigentes: los 33 cerrados ya no cuentan.
-        $this->assertSame(190, $serie[1]['hallazgos']);
+        // Abril arrastra los 190 vigentes y sigue contando los 33 ya cerrados.
+        $this->assertSame(223, $serie[1]['hallazgos']);
+        $this->assertSame(33, $serie[1]['cerrados']);
     }
 
     #[Test]
@@ -220,10 +237,10 @@ class ConsolidadoTest extends TestCase
             ->assertOk()
             ->assertJsonPath('corte_cerrado', false);
 
-        // Por omisión entrega el último corte cerrado: las cifras firmes.
+        // Por omisión entrega el mes en curso: ahí caen los cambios de la app.
         $this->postJson('/api/consolidado')
             ->assertOk()
-            ->assertJsonPath('periodo', '2026-03')
-            ->assertJsonPath('corte_cerrado', true);
+            ->assertJsonPath('periodo', '2026-04')
+            ->assertJsonPath('corte_cerrado', false);
     }
 }

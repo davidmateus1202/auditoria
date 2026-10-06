@@ -15,14 +15,43 @@ use RuntimeException;
  */
 final class EstructuraInvalida extends RuntimeException
 {
+    /**
+     * @param  list<array{tipo:string, hoja:string, celda:string, fila:int, encontrado:string, sugerencia:?string}>  $problemas
+     */
     public function __construct(
         string $mensaje,
         public readonly ?string $hoja = null,
         public readonly ?int $fila = null,
         public readonly ?string $encontrado = null,
         public readonly ?string $esperado = null,
+        public readonly array $problemas = [],
     ) {
         parent::__construct($mensaje);
+    }
+
+    /**
+     * Todas las celdas que no coinciden con el catálogo, de una vez: rechazar
+     * por la primera obligaba a corregir, subir, fallar en la siguiente, y
+     * así una por una.
+     *
+     * @param  list<array{tipo:string, hoja:string, celda:string, fila:int, encontrado:string, sugerencia:?string}>  $problemas
+     */
+    public static function celdasNoReconocidas(array $problemas): self
+    {
+        $primero = $problemas[0];
+        $total = count($problemas);
+
+        $mensaje = $total === 1
+            ? "Estándar no reconocido en «{$primero['hoja']}», celda {$primero['celda']}: «{$primero['encontrado']}»."
+            : "Hay {$total} celdas con un estándar que no coincide con el catálogo.";
+
+        return new self(
+            $mensaje.' Corríjalas en la vista previa del archivo y vuelva a cargarlo.',
+            hoja: $primero['hoja'],
+            fila: $primero['fila'],
+            encontrado: $primero['encontrado'],
+            problemas: $problemas,
+        );
     }
 
     public static function encabezadoNoEncontrado(string $hoja, string $esperado): self
@@ -61,10 +90,14 @@ final class EstructuraInvalida extends RuntimeException
     {
         return array_filter([
             'mensaje' => $this->getMessage(),
+            // Todo error de estructura se puede revisar —y casi siempre
+            // corregir— desde la vista previa, sin salir del sistema.
+            'tipo' => $this->problemas === [] ? 'estructura_invalida' : 'celdas_no_reconocidas',
             'hoja' => $this->hoja,
             'fila' => $this->fila,
             'encontrado' => $this->encontrado,
             'esperado' => $this->esperado,
+            'problemas' => $this->problemas === [] ? null : $this->problemas,
         ], static fn ($v) => $v !== null);
     }
 }

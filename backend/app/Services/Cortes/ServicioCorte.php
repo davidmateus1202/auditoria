@@ -151,6 +151,47 @@ final class ServicioCorte
     }
 
     /**
+     * Rehace los meses abiertos posteriores a $origen después de que este
+     * cambió (p. ej. una línea base cargada en un periodo anterior a un mes
+     * que ya estaba abierto).
+     *
+     * Solo se rehacen las filas que nadie ha reportado todavía: esas son puro
+     * arrastre del mes anterior y, si ese mes cambió, quedaron desfasadas. Lo
+     * reportado se respeta, y los meses cerrados no se tocan: sirven de base
+     * para los abiertos que vengan después.
+     *
+     * @return list<string> periodos actualizados
+     */
+    public function propagarAPosteriores(Corte $origen): array
+    {
+        $actualizados = [];
+        $base = $origen;
+
+        $posteriores = Corte::query()
+            ->where('periodo', '>', $origen->periodo)
+            ->orderBy('periodo')
+            ->get();
+
+        foreach ($posteriores as $posterior) {
+            if ($posterior->admiteEscritura()) {
+                $posterior->estados()
+                    ->where('presente_en_corte', false)
+                    ->whereIn('hallazgo_id', $base->estados()->select('hallazgo_id'))
+                    ->delete();
+
+                // Lo que la base dejó cerrado no vuelve: el consolidado ya lo
+                // cuenta desde la foto anterior.
+                $this->arrastrarVigentes($posterior, $base);
+                $actualizados[] = $posterior->periodo;
+            }
+
+            $base = $posterior;
+        }
+
+        return $actualizados;
+    }
+
+    /**
      * Trae al mes nuevo todos los hallazgos que siguen exigiendo gestión, con
      * el estado que traían y sin marcar: nadie ha reportado nada todavía.
      *
@@ -207,6 +248,49 @@ final class ServicioCorte
         if (preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $periodo) !== 1) {
             throw new RuntimeException("El periodo «{$periodo}» no tiene el formato AAAA-MM.");
         }
+    }
+
+    /**
+     * Deja el mismo cambio en el hallazgo y en su foto del corte abierto.
+     *
+     * El consolidado se lee de la foto y los listados del hallazgo: si un
+     * cambio toca solo uno de los dos, el tablero y la lista de hallazgos
+     * dejan de coincidir. Sin corte abierto solo cambia el hallazgo.
+     *
+     * @param  array{accion_propuesta?: ?string, responsable?: ?string, evidencia?: ?string}  $campos
+     */
+    public function registrarCambio(Hallazgo $hallazgo, EstadoHallazgo $estado, array $campos, ?User $usuario = null): void
+    {
+        $cerrado = $estado === EstadoHallazgo::Cerrado;
+        $yaEstabaCerrado = $hallazgo->estado === EstadoHallazgo::Cerrado;
+
+        $hallazgo->update([
+            ...$campos,
+            'estado' => $estado,
+            'cerrado_en' => $cerrado ? ($yaEstabaCerrado ? $hallazgo->cerrado_en : now()->toDateString()) : null,
+            'cerrado_por' => $cerrado ? ($yaEstabaCerrado ? $hallazgo->cerrado_por : $usuario?->id) : null,
+        ]);
+
+        $corte = Corte::abierto();
+
+        if ($corte === null) {
+            return;
+        }
+
+        $foto = HallazgoEstadoCorte::query()->firstOrNew([
+            'corte_id' => $corte->id,
+            'hallazgo_id' => $hallazgo->id,
+        ]);
+
+        if (! $foto->exists) {
+            $foto->meses_abierto = $estado->esVigente() ? 1 : 0;
+        }
+
+        $foto->fill([
+            ...$campos,
+            'estado' => $estado,
+            'presente_en_corte' => true,
+        ])->save();
     }
 
     /** Estado vigente de un hallazgo, sin importar si hay corte abierto. */

@@ -128,19 +128,13 @@ class ApiCortesYHallazgosTest extends TestCase
     }
 
     #[Test]
-    public function cerrar_un_hallazgo_sin_evidencia_se_rechaza(): void
+    public function cerrar_un_hallazgo_sin_evidencia_se_permite(): void
     {
         $hallazgo = Hallazgo::query()->vigentes()->firstOrFail();
 
-        // Cerrar sin dejar constancia de con qué se cerró es lo que hace que un
-        // consolidado no se pueda defender.
+        // La evidencia es opcional: se puede cerrar sin registrarla.
         $this->putJson("/api/hallazgos/{$hallazgo->id}/estado", ['estado' => 'cerrado'])
-            ->assertStatus(422);
-
-        $this->putJson("/api/hallazgos/{$hallazgo->id}/estado", [
-            'estado' => 'cerrado',
-            'evidencia' => 'Acta de entrega del mantenimiento, firmada el 12 de abril.',
-        ])->assertOk();
+            ->assertOk();
 
         $this->assertSame(EstadoHallazgo::Cerrado, $hallazgo->fresh()->estado);
         $this->assertDatabaseHas('seguimientos', [

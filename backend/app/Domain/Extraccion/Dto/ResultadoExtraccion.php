@@ -29,6 +29,9 @@ final class ResultadoExtraccion
 
     public int $filasLeidas = 0;
 
+    /** Dónde dice la sede en el archivo («B4» de la hoja INFORME), para señalarla en la vista previa. */
+    public ?string $celdaSede = null;
+
     public function __construct(
         public readonly TipoFormato $formato,
         public readonly ?string $sede = null,

@@ -51,6 +51,11 @@ class Auditoria extends Model
         return $this->hasMany(HallazgoAparicion::class);
     }
 
+    public function fotos(): HasMany
+    {
+        return $this->hasMany(FotoAuditoria::class)->orderBy('orden');
+    }
+
     /** Cada carga crea una versión nueva y conserva las anteriores. */
     public static function siguienteVersion(int $sedeId): int
     {

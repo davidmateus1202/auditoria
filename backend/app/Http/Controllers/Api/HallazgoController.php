@@ -5,14 +5,22 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Domain\Enums\EstadoHallazgo;
+use App\Domain\Extraccion\TextoNormalizador;
 use App\Http\Controllers\Controller;
+use App\Models\Corte;
 use App\Models\Hallazgo;
+use App\Models\HallazgoEstadoCorte;
+use App\Models\Sede;
 use App\Models\Seguimiento;
+use App\Services\Cortes\ServicioCorte;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class HallazgoController extends Controller
 {
+    public function __construct(private readonly ServicioCorte $cortes) {}
+
     /**
      * Listado filtrable. Los filtros por sede, estándar y sede+estándar son los
      * tres cortes que pidió el usuario, aquí a nivel de detalle.
@@ -55,6 +63,79 @@ class HallazgoController extends Controller
         );
     }
 
+    /**
+     * Registra un hallazgo a mano, sin pasar por un Excel. Nace vigente en la
+     * sede como cualquier otro y, si hay un corte abierto, entra directo como
+     * reportado de ese mes — no «arrastrado» desde uno anterior, porque nunca
+     * existió antes de ahora.
+     */
+    public function store(Request $peticion): JsonResponse
+    {
+        $datos = $peticion->validate([
+            'sede_id' => ['required', 'integer', 'exists:sedes,id'],
+            'estandar_codigo' => ['required', 'string', 'exists:estandares,codigo'],
+            'descripcion' => ['required', 'string', 'min:10'],
+            'estado' => ['sometimes', 'string', 'in:abierto,abierto_evidencia,cerrado,sin_dato'],
+            'accion_propuesta' => ['nullable', 'string'],
+            'responsable' => ['nullable', 'string', 'max:200'],
+            'evidencia' => ['nullable', 'string'],
+        ]);
+
+        $estado = EstadoHallazgo::from($datos['estado'] ?? 'abierto');
+
+        $sede = Sede::findOrFail($datos['sede_id']);
+
+        // Misma huella que calcula el extractor de Excel: si más adelante una
+        // auditoría trae el mismo texto para esta sede, se reconcilia contra
+        // este hallazgo en vez de duplicarlo.
+        $huella = sha1(implode('|', [
+            TextoNormalizador::canonica($sede->codigo),
+            $datos['estandar_codigo'],
+            TextoNormalizador::canonica($datos['descripcion']),
+        ]));
+
+        if (Hallazgo::query()->where('sede_id', $sede->id)->where('huella', $huella)->exists()) {
+            return response()->json([
+                'mensaje' => 'Ya existe un hallazgo con este mismo texto para esta sede.',
+            ], 422);
+        }
+
+        $hallazgo = DB::transaction(function () use ($datos, $sede, $estado, $huella, $peticion): Hallazgo {
+            $hallazgo = Hallazgo::create([
+                'sede_id' => $sede->id,
+                'estandar_codigo' => $datos['estandar_codigo'],
+                'descripcion' => $datos['descripcion'],
+                'huella' => $huella,
+                'clasificacion' => 'hallazgo',
+                'estado' => $estado,
+                'accion_propuesta' => $datos['accion_propuesta'] ?? null,
+                'responsable' => $datos['responsable'] ?? null,
+                'evidencia' => $datos['evidencia'] ?? null,
+                'cerrado_en' => $estado === EstadoHallazgo::Cerrado ? now()->toDateString() : null,
+                'cerrado_por' => $estado === EstadoHallazgo::Cerrado ? $peticion->user()?->id : null,
+            ]);
+
+            $corteAbierto = Corte::abierto();
+
+            if ($corteAbierto !== null) {
+                HallazgoEstadoCorte::create([
+                    'hallazgo_id' => $hallazgo->id,
+                    'corte_id' => $corteAbierto->id,
+                    'estado' => $estado,
+                    'presente_en_corte' => true,
+                    'meses_abierto' => $estado->esVigente() ? 1 : 0,
+                    'accion_propuesta' => $datos['accion_propuesta'] ?? null,
+                    'responsable' => $datos['responsable'] ?? null,
+                    'evidencia' => $datos['evidencia'] ?? null,
+                ]);
+            }
+
+            return $hallazgo;
+        });
+
+        return response()->json(['datos' => $hallazgo->load(['sede', 'estandar'])], 201);
+    }
+
     public function show(Hallazgo $hallazgo): JsonResponse
     {
         $hallazgo->load(['sede', 'estandar', 'servicio', 'evidencias']);
@@ -87,33 +168,25 @@ class HallazgoController extends Controller
         $nuevo = EstadoHallazgo::from($datos['estado']);
         $anterior = $hallazgo->estado;
 
-        // Cerrar sin dejar constancia de con qué se cerró es lo que hace que un
-        // consolidado no se pueda defender.
-        if ($nuevo === EstadoHallazgo::Cerrado && blank($datos['evidencia'] ?? null)) {
-            return response()->json([
-                'mensaje' => 'Cerrar un hallazgo exige registrar la evidencia del cumplimiento.',
-            ], 422);
-        }
+        DB::transaction(function () use ($hallazgo, $nuevo, $anterior, $datos, $peticion): void {
+            // También en la foto del corte abierto: de ahí sale el tablero.
+            $this->cortes->registrarCambio($hallazgo, $nuevo, [
+                'evidencia' => $datos['evidencia'] ?? $hallazgo->evidencia,
+                'accion_propuesta' => $datos['accion_propuesta'] ?? $hallazgo->accion_propuesta,
+                'responsable' => $datos['responsable'] ?? $hallazgo->responsable,
+            ], $peticion->user());
 
-        $hallazgo->update([
-            'estado' => $nuevo,
-            'evidencia' => $datos['evidencia'] ?? $hallazgo->evidencia,
-            'accion_propuesta' => $datos['accion_propuesta'] ?? $hallazgo->accion_propuesta,
-            'responsable' => $datos['responsable'] ?? $hallazgo->responsable,
-            'cerrado_en' => $nuevo === EstadoHallazgo::Cerrado ? now()->toDateString() : null,
-            'cerrado_por' => $nuevo === EstadoHallazgo::Cerrado ? $peticion->user()?->id : null,
-        ]);
-
-        Seguimiento::create([
-            'hallazgo_id' => $hallazgo->id,
-            'usuario_id' => $peticion->user()?->id,
-            'estado_anterior' => $anterior,
-            'estado_nuevo' => $nuevo,
-            'accion_propuesta' => $datos['accion_propuesta'] ?? null,
-            'responsable' => $datos['responsable'] ?? null,
-            'evidencia' => $datos['evidencia'] ?? null,
-            'motivo' => $datos['motivo'] ?? null,
-        ]);
+            Seguimiento::create([
+                'hallazgo_id' => $hallazgo->id,
+                'usuario_id' => $peticion->user()?->id,
+                'estado_anterior' => $anterior,
+                'estado_nuevo' => $nuevo,
+                'accion_propuesta' => $datos['accion_propuesta'] ?? null,
+                'responsable' => $datos['responsable'] ?? null,
+                'evidencia' => $datos['evidencia'] ?? null,
+                'motivo' => $datos['motivo'] ?? null,
+            ]);
+        });
 
         return response()->json(['datos' => $hallazgo->fresh()]);
     }

@@ -9,6 +9,7 @@ use App\Domain\Extraccion\CatalogoEstandares;
 use App\Models\Corte;
 use App\Models\HallazgoEstadoCorte;
 use App\Models\Sede;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use RuntimeException;
 
@@ -69,13 +70,14 @@ final class ServicioConsolidado
     }
 
     /**
-     * Una fila por hallazgo vigente en ese corte, con lo justo para agregar.
+     * Una fila por hallazgo del corte, con lo justo para agregar: los que el
+     * mes sigue (vigentes) más los que ya habían quedado cerrados antes.
      *
      * @return Collection<int, object>
      */
     private function filas(Corte $corte, array $sedeIds): Collection
     {
-        return HallazgoEstadoCorte::query()
+        $delCorte = HallazgoEstadoCorte::query()
             ->join('hallazgos', 'hallazgos.id', '=', 'hallazgo_estado_corte.hallazgo_id')
             ->join('sedes', 'sedes.id', '=', 'hallazgos.sede_id')
             ->where('hallazgo_estado_corte.corte_id', $corte->id)
@@ -90,6 +92,63 @@ final class ServicioConsolidado
                 'sedes.nombre as sede_nombre',
             ])
             ->get();
+
+        return $delCorte->concat($this->cerradosAntes($corte, $sedeIds))->values();
+    }
+
+    /**
+     * Hallazgos cuya última foto ANTERIOR a este corte quedó cerrada.
+     *
+     * Al abrir un mes solo viajan los vigentes, así que sin esto los cerrados
+     * desaparecen del denominador y del numerador: el avance de cada mes
+     * nuevo arranca en 0 % aunque el municipio lleve decenas de cierres. Se
+     * leen de las fotos de cortes anteriores, no del estado actual del
+     * hallazgo, para que el consolidado siga siendo reproducible.
+     *
+     * @return Collection<int, object>
+     */
+    private function cerradosAntes(Corte $corte, array $sedeIds): Collection
+    {
+        return $this->fotosCerradasAntes($corte, $sedeIds)
+            ->join('sedes', 'sedes.id', '=', 'hallazgos.sede_id')
+            ->select([
+                'hallazgo_estado_corte.estado',
+                'hallazgos.estandar_codigo',
+                'sedes.id as sede_id',
+                'sedes.codigo as sede_codigo',
+                'sedes.nombre as sede_nombre',
+            ])
+            ->get()
+            // Un cerrado no está pendiente de reportar ni suma antigüedad.
+            ->each(function ($fila): void {
+                $fila->presente_en_corte = true;
+                $fila->meses_abierto = 0;
+            });
+    }
+
+    /**
+     * La última foto anterior a $corte de cada hallazgo que quedó cerrado y
+     * que este corte ya no sigue. Pública para que el detalle del Excel liste
+     * exactamente los mismos hallazgos que cuentan los totales.
+     *
+     * @param  list<int>  $sedeIds
+     * @return Builder<HallazgoEstadoCorte>
+     */
+    public function fotosCerradasAntes(Corte $corte, array $sedeIds = []): Builder
+    {
+        return HallazgoEstadoCorte::query()
+            ->join('cortes', 'cortes.id', '=', 'hallazgo_estado_corte.corte_id')
+            ->join('hallazgos', 'hallazgos.id', '=', 'hallazgo_estado_corte.hallazgo_id')
+            ->where('cortes.periodo', '<', $corte->periodo)
+            ->where('hallazgo_estado_corte.estado', EstadoHallazgo::Cerrado->value)
+            // Que no haya una foto más reciente, ni en este corte ni entre ambos.
+            ->whereNotExists(fn ($q) => $q->selectRaw('1')
+                ->from('hallazgo_estado_corte as posterior')
+                ->join('cortes as corte_posterior', 'corte_posterior.id', '=', 'posterior.corte_id')
+                ->whereColumn('posterior.hallazgo_id', 'hallazgo_estado_corte.hallazgo_id')
+                ->whereColumn('corte_posterior.periodo', '>', 'cortes.periodo')
+                ->where('corte_posterior.periodo', '<=', $corte->periodo))
+            ->when($sedeIds !== [], fn ($q) => $q->whereIn('hallazgos.sede_id', $sedeIds));
     }
 
     private function generales(Collection $filas): array

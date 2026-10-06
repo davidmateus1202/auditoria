@@ -14,6 +14,7 @@ use App\Models\Corte;
 use App\Models\Hallazgo;
 use App\Models\HallazgoEstadoCorte;
 use App\Models\Sede;
+use App\Services\Cortes\ServicioCorte;
 use App\Services\Extraccion\ExtractorExcel;
 use Illuminate\Support\Facades\DB;
 
@@ -31,12 +32,16 @@ use Illuminate\Support\Facades\DB;
  */
 final class ImportadorLineaBase
 {
-    public function __construct(private readonly ExtractorExcel $extractor = new ExtractorExcel()) {}
+    public function __construct(
+        private readonly ExtractorExcel $extractor = new ExtractorExcel(),
+        private readonly ServicioCorte $cortes = new ServicioCorte(),
+    ) {}
 
     /**
      * @return array{
      *     corte: string, hallazgos: int, sedes: int,
-     *     por_estado: array<string,int>, sin_sede: list<string>
+     *     por_estado: array<string,int>, sin_sede: list<string>,
+     *     meses_actualizados: list<string>
      * }
      */
     public function importar(string $ruta, string $periodo): array
@@ -76,12 +81,17 @@ final class ImportadorLineaBase
                 }
             }
 
+            // Si la línea base entra en un mes anterior a uno que ya estaba
+            // abierto, ese mes arrastró estados viejos: hay que rehacerlo.
+            $actualizados = $this->cortes->propagarAPosteriores($corte);
+
             return [
                 'corte' => $corte->periodo,
                 'hallazgos' => $creados,
                 'sedes' => count($porSede) - count($sinSede),
                 'por_estado' => $porEstado,
                 'sin_sede' => $sinSede,
+                'meses_actualizados' => $actualizados,
             ];
         });
     }

@@ -202,7 +202,7 @@ class CargaAuditoriaTest extends TestCase
     }
 
     #[Test]
-    public function cerrar_desde_el_cruce_exige_evidencia(): void
+    public function cerrar_desde_el_cruce_no_exige_evidencia(): void
     {
         $this->conLineaBase();
 
@@ -230,27 +230,17 @@ class CargaAuditoriaTest extends TestCase
         foreach ($movimientos as $m) {
             if ($m->destino->exigeConfirmacion()) {
                 $decisiones[$m->id] = $m->id === $cierre->id
-                    ? ['accion' => 'cerrar']            // sin evidencia: debe fallar
+                    ? ['accion' => 'cerrar']            // sin evidencia: la evidencia es opcional
                     : ['accion' => 'reabrir'];
             }
         }
-
-        $this->postJson("/api/auditorias/{$auditoria->id}/confirmar", ['decisiones' => $decisiones])
-            ->assertStatus(422)
-            ->assertSee('evidencia', false);
-
-        // Con evidencia sí cierra.
-        $decisiones[$cierre->id] = [
-            'accion' => 'cerrar',
-            'evidencia' => 'Acta de obra del 12 de abril: pasamanos instalados en ambos costados.',
-        ];
 
         $this->postJson("/api/auditorias/{$auditoria->id}/confirmar", ['decisiones' => $decisiones])
             ->assertOk()
             ->assertJsonPath('aplicado.cerrados', 1);
 
         $this->assertSame(EstadoHallazgo::Cerrado, $huerfano->fresh()->estado);
-        $this->assertDatabaseHas('seguimientos', ['hallazgo_id' => $huerfano->id]);
+        $this->assertDatabaseHas('seguimientos', ['hallazgo_id' => $huerfano->id, 'evidencia' => null]);
     }
 
     #[Test]

@@ -16,9 +16,12 @@ use RuntimeException;
  */
 final class SedeNoIdentificada extends RuntimeException
 {
+    /** @param array{id:int, nombre:string}|null $sugerencia la sede registrada que más se parece */
     public function __construct(
         string $mensaje,
         public readonly ?string $textoEncontrado = null,
+        public readonly ?array $sugerencia = null,
+        public readonly ?string $celda = null,
     ) {
         parent::__construct($mensaje);
     }
@@ -30,6 +33,9 @@ final class SedeNoIdentificada extends RuntimeException
             'mensaje' => $this->getMessage(),
             'tipo' => 'sede_no_identificada',
             'texto_encontrado' => $this->textoEncontrado,
+            'sugerencia' => $this->sugerencia,
+            'hoja' => $this->celda === null ? null : 'INFORME',
+            'celda' => $this->celda,
         ], static fn ($v) => $v !== null);
     }
 }

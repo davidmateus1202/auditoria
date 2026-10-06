@@ -27,7 +27,8 @@ final class ExtractorExcel
         private readonly LectorSeguimiento $seguimiento = new LectorSeguimiento(),
     ) {}
 
-    public function extraer(string $ruta, ?TipoFormato $formatoEsperado = null): ResultadoExtraccion
+    /** @param array<string, string> $correcciones celdas corregidas en la vista previa, por «HOJA!A12» */
+    public function extraer(string $ruta, ?TipoFormato $formatoEsperado = null, array $correcciones = []): ResultadoExtraccion
     {
         if (! is_readable($ruta)) {
             throw EstructuraInvalida::formatoNoReconocido("No se pudo leer el archivo en «{$ruta}».");
@@ -36,7 +37,7 @@ final class ExtractorExcel
         $formato = $formatoEsperado ?? $this->detectar($ruta);
 
         return match ($formato) {
-            TipoFormato::Autoevaluacion => $this->autoevaluacion->leer($ruta),
+            TipoFormato::Autoevaluacion => $this->autoevaluacion->leer($ruta, $correcciones),
             TipoFormato::Seguimiento => $this->seguimiento->leer($ruta),
         };
     }
